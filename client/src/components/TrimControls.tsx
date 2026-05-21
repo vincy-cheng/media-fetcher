@@ -25,10 +25,10 @@ export function TrimControls({ start, end, duration, onChange }: TrimControlsPro
   return (
     <div className="flex items-center gap-4">
       <div className="flex flex-col gap-1">
-        <label className="text-xs font-medium text-gray-500">Start</label>
+        <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Start</label>
         <input
           type="text"
-          className="w-24 rounded border border-gray-300 px-2 py-1 text-sm"
+          className="w-24 rounded border border-gray-300 px-2 py-1 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
           value={formatTime(start)}
           onChange={(e) => {
             const s = parseTime(e.target.value)
@@ -37,10 +37,10 @@ export function TrimControls({ start, end, duration, onChange }: TrimControlsPro
         />
       </div>
       <div className="flex flex-col gap-1">
-        <label className="text-xs font-medium text-gray-500">End</label>
+        <label className="text-xs font-medium text-gray-500 dark:text-gray-400">End</label>
         <input
           type="text"
-          className="w-24 rounded border border-gray-300 px-2 py-1 text-sm"
+          className="w-24 rounded border border-gray-300 px-2 py-1 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
           value={formatTime(end)}
           onChange={(e) => {
             const s = parseTime(e.target.value)
@@ -51,7 +51,7 @@ export function TrimControls({ start, end, duration, onChange }: TrimControlsPro
       <button
         type="button"
         onClick={() => onChange(0, duration)}
-        className="mt-4 text-xs text-gray-400 hover:text-gray-600 underline"
+        className="mt-4 cursor-pointer text-xs text-gray-400 underline hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
       >
         Reset
       </button>

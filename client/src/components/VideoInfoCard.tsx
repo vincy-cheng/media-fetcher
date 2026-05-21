@@ -17,7 +17,7 @@ interface VideoInfoCardProps {
 
 export function VideoInfoCard({ info, onPreview, previewLoading }: VideoInfoCardProps) {
   return (
-    <div className="flex gap-4 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+    <div className="flex gap-4 rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
       {info.thumbnail && (
         <img
           src={info.thumbnail}
@@ -27,18 +27,18 @@ export function VideoInfoCard({ info, onPreview, previewLoading }: VideoInfoCard
       )}
       <div className="flex flex-1 flex-col justify-between">
         <div>
-          <h2 className="line-clamp-2 text-base font-semibold">{info.title}</h2>
-          <p className="mt-1 text-sm text-gray-500">{info.uploader}</p>
+          <h2 className="line-clamp-2 text-base font-semibold dark:text-gray-100">{info.title}</h2>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{info.uploader}</p>
         </div>
         <div className="flex items-center gap-3">
-          <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">
+          <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600 dark:bg-gray-700 dark:text-gray-300">
             {formatDuration(info.duration)}
           </span>
           {onPreview && (
             <button
               onClick={onPreview}
               disabled={previewLoading}
-              className="rounded bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-700 hover:bg-indigo-100 disabled:opacity-50"
+              className="cursor-pointer rounded bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-700 hover:bg-indigo-100 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-indigo-900/30 dark:text-indigo-300 dark:hover:bg-indigo-900/50"
             >
               {previewLoading ? 'Loading preview…' : '▶ Preview'}
             </button>

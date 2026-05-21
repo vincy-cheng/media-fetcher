@@ -68,11 +68,11 @@ export function AudioPreview({ audioUrl, start, end, onTrimChange }: AudioPrevie
 
   return (
     <div className="flex flex-col gap-2">
-      <div ref={containerRef} className="rounded-md border border-gray-200 bg-gray-50 p-2" />
+      <div ref={containerRef} className="rounded-md border border-gray-200 bg-gray-50 p-2 dark:border-gray-700 dark:bg-gray-900" />
       <button
         type="button"
         onClick={handlePlayPause}
-        className="self-start rounded bg-indigo-600 px-3 py-1 text-sm text-white hover:bg-indigo-700"
+        className="cursor-pointer self-start rounded bg-indigo-600 px-3 py-1 text-sm text-white hover:bg-indigo-700"
       >
         ▶ / ⏸
       </button>

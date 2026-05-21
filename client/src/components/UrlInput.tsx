@@ -18,13 +18,14 @@ export function UrlInput({ onSubmit, loading }: UrlInputProps) {
     <form onSubmit={handleSubmit} className="flex gap-2">
       <input
         type="text"
-        className="flex-1 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="flex-1 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
         placeholder="Paste YouTube URL…"
         value={value}
         onChange={(e) => setValue(e.target.value)}
         onPaste={(e) => {
           const pasted = e.clipboardData.getData('text').trim()
           if (pasted.includes('youtube.com') || pasted.includes('youtu.be')) {
+            e.preventDefault()
             setValue(pasted)
           }
         }}
@@ -33,7 +34,7 @@ export function UrlInput({ onSubmit, loading }: UrlInputProps) {
       <button
         type="submit"
         disabled={loading || !value.trim()}
-        className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+        className="cursor-pointer rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
       >
         {loading ? 'Loading…' : 'Fetch'}
       </button>
