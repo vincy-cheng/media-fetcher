@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { UrlInput } from '@/components/UrlInput'
 import { VideoInfoCard } from '@/components/VideoInfoCard'
 import { FormatSelector } from '@/components/FormatSelector'
@@ -6,23 +6,39 @@ import { OutputFolder } from '@/components/OutputFolder'
 import { AudioPreview } from '@/components/AudioPreview'
 import { TrimControls } from '@/components/TrimControls'
 import { JobQueue } from '@/components/JobQueue'
+import { SettingsModal } from '@/components/SettingsModal'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { useVideoInfo } from '@/hooks/useVideoInfo'
 import { usePreview } from '@/hooks/usePreview'
 import { useDownloadJob } from '@/hooks/useDownloadJob'
 import { useDarkMode } from '@/hooks/useDarkMode'
-import type { AudioFormat } from '@/api/types'
+import { useSettings } from '@/hooks/useSettings'
+import type { AudioFormat, Bitrate } from '@/api/types'
 
 export default function App() {
   const { info, loading: infoLoading, error: infoError, fetch: fetchInfo } = useVideoInfo()
   const { audioUrl, loading: previewLoading, error: previewError, load: loadPreview } = usePreview()
   const { jobs, start: startDownload, clear } = useDownloadJob()
   const { dark, toggle: toggleDark } = useDarkMode()
+  const { settings, loaded, save: saveSettings } = useSettings()
 
   const [format, setFormat] = useState<AudioFormat>('m4a')
   const [outputDir, setOutputDir] = useState('')
+  const [bitrate, setBitrate] = useState<Bitrate>(192)
   const [trimStart, setTrimStart] = useState(0)
   const [trimEnd, setTrimEnd] = useState(0)
+  const [showSettings, setShowSettings] = useState(false)
+  const prefilled = useRef(false)
+
+  // Pre-fill from saved preferences once on first load
+  useEffect(() => {
+    if (!loaded || prefilled.current) return
+    prefilled.current = true
+    const prefs = settings.downloadPreferences
+    setFormat(prefs.defaultFormat)
+    if (prefs.defaultOutputDir) setOutputDir(prefs.defaultOutputDir)
+    setBitrate(prefs.defaultBitrate)
+  }, [loaded, settings])
 
   const handleTrimChange = (s: number, e: number) => {
     setTrimStart(s)
@@ -44,6 +60,7 @@ export default function App() {
       start: trimStart > 0 ? trimStart : undefined,
       end: trimEnd < info.duration && trimEnd > 0 ? trimEnd : undefined,
       outputDir,
+      bitrate,
     })
   }
 
@@ -55,14 +72,24 @@ export default function App() {
             <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">YouTube Audio Downloader</h1>
             <p className="text-sm text-gray-500 dark:text-gray-400">Download audio in mp3, m4a, wav, ogg, or flac</p>
           </div>
-          <button
-            type="button"
-            onClick={toggleDark}
-            className="cursor-pointer rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
-            aria-label="Toggle dark mode"
-          >
-            {dark ? '☀️ Light' : '🌙 Dark'}
-          </button>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setShowSettings(true)}
+              className="cursor-pointer rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+              aria-label="Open settings"
+            >
+              ⚙️ Settings
+            </button>
+            <button
+              type="button"
+              onClick={toggleDark}
+              className="cursor-pointer rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+              aria-label="Toggle dark mode"
+            >
+              {dark ? '☀️ Light' : '🌙 Dark'}
+            </button>
+          </div>
         </header>
 
         <UrlInput onSubmit={fetchInfo} loading={infoLoading} />
@@ -133,6 +160,14 @@ export default function App() {
 
         <JobQueue jobs={jobs} onClear={clear} />
       </div>
+
+      {showSettings && (
+        <SettingsModal
+          settings={settings}
+          onSave={saveSettings}
+          onClose={() => setShowSettings(false)}
+        />
+      )}
     </div>
   )
 }

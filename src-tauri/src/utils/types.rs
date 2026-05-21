@@ -12,10 +12,32 @@ pub struct CookieConfig {
     pub file_path: Option<String>,
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct DownloadPreferences {
+    /// "mp3" | "m4a" | "wav" | "ogg" | "flac"
+    pub default_format: String,
+    /// Absolute path or "" if not set
+    pub default_output_dir: String,
+    /// Bitrate in kbps. Valid values: 128, 192, 256, 320. Only applied to lossy formats (mp3, m4a, ogg).
+    pub default_bitrate: u16,
+}
+
+impl Default for DownloadPreferences {
+    fn default() -> Self {
+        Self {
+            default_format: "m4a".to_string(),
+            default_output_dir: String::new(),
+            default_bitrate: 192,
+        }
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct AppSettings {
     pub cookie_config: CookieConfig,
+    pub download_preferences: DownloadPreferences,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

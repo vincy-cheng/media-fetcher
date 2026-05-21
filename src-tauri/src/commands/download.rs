@@ -15,6 +15,7 @@ pub async fn download_audio(
     end: Option<f64>,
     output_dir: String,
     cookie_config: Option<CookieConfig>,
+    bitrate: Option<u16>,
 ) -> Result<String, String> {
     if !is_valid_youtube_url(&url) {
         return Err("Invalid YouTube URL".to_string());
@@ -86,11 +87,21 @@ pub async fn download_audio(
         ffmpeg_args.extend(["-to".to_string(), format_time(e)]);
     }
 
+    let lossy_bitrate = bitrate.unwrap_or(192);
     match format.as_str() {
-        "mp3"  => ffmpeg_args.extend(["-acodec".to_string(), "libmp3lame".to_string(), "-q:a".to_string(), "2".to_string()]),
-        "m4a"  => ffmpeg_args.extend(["-acodec".to_string(), "aac".to_string()]),
+        "mp3"  => ffmpeg_args.extend([
+            "-acodec".to_string(), "libmp3lame".to_string(),
+            "-b:a".to_string(), format!("{lossy_bitrate}k"),
+        ]),
+        "m4a"  => ffmpeg_args.extend([
+            "-acodec".to_string(), "aac".to_string(),
+            "-b:a".to_string(), format!("{lossy_bitrate}k"),
+        ]),
         "wav"  => ffmpeg_args.extend(["-acodec".to_string(), "pcm_s16le".to_string()]),
-        "ogg"  => ffmpeg_args.extend(["-acodec".to_string(), "libvorbis".to_string()]),
+        "ogg"  => ffmpeg_args.extend([
+            "-acodec".to_string(), "libvorbis".to_string(),
+            "-b:a".to_string(), format!("{lossy_bitrate}k"),
+        ]),
         "flac" => ffmpeg_args.extend(["-acodec".to_string(), "flac".to_string()]),
         _      => {}
     }

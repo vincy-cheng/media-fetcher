@@ -9,12 +9,17 @@ export interface VideoInfo {
   url: string
 }
 
+export type AudioFormat = 'mp3' | 'm4a' | 'wav' | 'ogg' | 'flac'
+
+export type Bitrate = 128 | 192 | 256 | 320
+
 export interface DownloadOptions {
   url: string
   format: AudioFormat
   start?: number
   end?: number
   outputDir: string
+  bitrate?: Bitrate
 }
 
 export interface JobProgress {
@@ -23,4 +28,19 @@ export interface JobProgress {
   message: string
 }
 
-export type AudioFormat = 'mp3' | 'm4a' | 'wav' | 'ogg' | 'flac'
+export interface CookieConfig {
+  mode: 'none' | 'browser' | 'file'
+  browser?: string
+  filePath?: string
+}
+
+export interface DownloadPreferences {
+  defaultFormat: AudioFormat
+  defaultOutputDir: string
+  defaultBitrate: Bitrate
+}
+
+export interface AppSettings {
+  cookieConfig: CookieConfig
+  downloadPreferences: DownloadPreferences
+}
