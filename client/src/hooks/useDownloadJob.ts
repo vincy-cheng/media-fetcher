@@ -91,8 +91,8 @@ export function useDownloadJob() {
     setJobs((prev) => prev.filter((j) => !TERMINAL_STAGES.has(j.progress.stage)))
   }, [])
 
-  const activeJobs = jobs.filter((j) => !TERMINAL_STAGES.has(j.progress.stage))
-  const history = jobs.filter((j) => TERMINAL_STAGES.has(j.progress.stage))
+  const activeJobs = jobs.filter((j) => !TERMINAL_STAGES.has(j.progress.stage)).reverse()
+  const history = jobs.filter((j) => TERMINAL_STAGES.has(j.progress.stage)).reverse()
 
   return { jobs: activeJobs, history, start, cancel, clear: clearHistory }
 }

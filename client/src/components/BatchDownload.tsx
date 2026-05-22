@@ -8,7 +8,12 @@ import { useBatchDownload } from "@/hooks/useBatchDownload";
 import type { AudioFormat, Bitrate } from "@/api/types";
 
 const PAGE_SIZE = 5;
-const NON_RETRIABLE = new Set(["complete", "downloading", "converting", "cancelling"]);
+const NON_RETRIABLE = new Set([
+  "complete",
+  "downloading",
+  "converting",
+  "cancelling",
+]);
 
 interface BatchDownloadProps {
   defaultFormat: AudioFormat;
@@ -57,7 +62,8 @@ export function BatchDownload({
       !i.infoError &&
       (!i.progress || !NON_RETRIABLE.has(i.progress.stage)),
   ).length;
-  const canDownload = readyCount > 0 && outputDir.trim().length > 0 && !downloading;
+  const canDownload =
+    readyCount > 0 && outputDir.trim().length > 0 && !downloading;
 
   const totalPages = Math.ceil(completedItems.length / PAGE_SIZE);
   const pagedCompleted = completedItems.slice(
@@ -67,7 +73,8 @@ export function BatchDownload({
 
   // Reset to last valid page if items are removed
   useEffect(() => {
-    if (completedPage > totalPages && totalPages > 0) setCompletedPage(totalPages);
+    if (completedPage > totalPages && totalPages > 0)
+      setCompletedPage(totalPages);
   }, [completedPage, totalPages]);
 
   const handleDownloadAll = () => {
@@ -84,7 +91,9 @@ export function BatchDownload({
           <div className="flex items-center justify-between">
             <span className="text-sm text-gray-600 dark:text-gray-400">
               {activeItems.length} queued
-              {readyCount < activeItems.length && ` · ${readyCount} ready`}
+              {activeItems.length > 1 ? "s" : ""}
+              {readyCount < activeItems.length &&
+                ` · ${readyCount} pending for download`}
             </span>
             <button
               type="button"
@@ -157,7 +166,9 @@ export function BatchDownload({
               </span>
               <button
                 type="button"
-                onClick={() => setCompletedPage((p) => Math.min(totalPages, p + 1))}
+                onClick={() =>
+                  setCompletedPage((p) => Math.min(totalPages, p + 1))
+                }
                 disabled={completedPage === totalPages}
                 className="rounded px-2 py-1 text-xs text-gray-500 hover:bg-gray-100 disabled:opacity-30 dark:text-gray-400 dark:hover:bg-gray-700"
               >
