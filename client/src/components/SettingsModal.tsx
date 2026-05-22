@@ -94,7 +94,7 @@ export function SettingsModal({ settings, onSave, onClose }: SettingsModalProps)
                   onClick={() => setFormat(f.value)}
                   className={`cursor-pointer rounded-md border px-3 py-1.5 text-sm font-medium transition-colors ${
                     format === f.value
-                      ? 'border-blue-600 bg-blue-600 text-white'
+                      ? 'border-primary-600 bg-primary-600 text-white'
                       : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700'
                   }`}
                 >
@@ -114,7 +114,7 @@ export function SettingsModal({ settings, onSave, onClose }: SettingsModalProps)
                 value={outputDir}
                 onChange={(e) => setOutputDir(e.target.value)}
                 placeholder="/Users/you/Downloads"
-                className="flex-1 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
+                className="flex-1 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
               />
               <button
                 type="button"
@@ -141,7 +141,7 @@ export function SettingsModal({ settings, onSave, onClose }: SettingsModalProps)
                     onClick={() => setBitrate(b)}
                     className={`cursor-pointer rounded-md border px-3 py-1.5 text-sm font-medium transition-colors ${
                       bitrate === b
-                        ? 'border-blue-600 bg-blue-600 text-white'
+                        ? 'border-primary-600 bg-primary-600 text-white'
                         : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700'
                     }`}
                   >
@@ -173,7 +173,7 @@ export function SettingsModal({ settings, onSave, onClose }: SettingsModalProps)
               type="button"
               onClick={handleSave}
               disabled={saving}
-              className="cursor-pointer rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+              className="cursor-pointer rounded-md bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {saving ? 'Saving…' : 'Save'}
             </button>

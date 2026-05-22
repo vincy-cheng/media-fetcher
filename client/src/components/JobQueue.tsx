@@ -8,7 +8,7 @@ const STAGE_LABELS: Record<string, string> = {
 }
 
 const STAGE_COLORS: Record<string, string> = {
-  downloading: 'bg-blue-500',
+  downloading: 'bg-primary-500',
   converting: 'bg-indigo-500',
   complete: 'bg-green-500',
   error: 'bg-red-500',

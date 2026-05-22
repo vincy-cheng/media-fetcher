@@ -33,7 +33,7 @@ export function BatchUrlInput({ count, onAdd }: BatchUrlInputProps) {
       <div className="flex gap-2">
         <input
           type="text"
-          className="flex-1 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
+          className="flex-1 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
           placeholder="Paste YouTube URL…"
           aria-label="YouTube URL"
           value={value}
@@ -45,7 +45,7 @@ export function BatchUrlInput({ count, onAdd }: BatchUrlInputProps) {
           type="button"
           onClick={handleAdd}
           disabled={!isValid || atLimit}
-          className="cursor-pointer rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+          className="cursor-pointer rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50"
         >
           Add
         </button>

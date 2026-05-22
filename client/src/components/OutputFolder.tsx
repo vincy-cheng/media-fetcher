@@ -27,7 +27,7 @@ export function OutputFolder({ value, onChange }: OutputFolderProps) {
       <div className="flex gap-2">
         <input
           type="text"
-          className="flex-1 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
+          className="flex-1 rounded-md border border-gray-300 bg-white px-4 py-2.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
           placeholder="/Users/you/Downloads"
           value={value}
           onChange={(e) => onChange(e.target.value)}

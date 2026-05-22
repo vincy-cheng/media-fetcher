@@ -9,7 +9,7 @@ const STAGE_LABELS: Record<string, string> = {
 }
 
 const STAGE_COLORS: Record<string, string> = {
-  downloading: 'bg-blue-500',
+  downloading: 'bg-primary-500',
   converting: 'bg-indigo-500',
   complete: 'bg-green-500',
   error: 'bg-red-500',
@@ -57,7 +57,7 @@ export function BatchItemRow({ item, onRemove, onRetry }: BatchItemRowProps) {
               type="button"
               onClick={() => onRetry(item.id)}
               aria-label="Retry fetching video information"
-              className="shrink-0 text-xs text-blue-600 underline hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+              className="shrink-0 text-xs text-primary-600 underline hover:text-primary-800 dark:text-primary-400 dark:hover:text-primary-300"
             >
               Retry
             </button>

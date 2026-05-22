@@ -109,7 +109,7 @@ export default function App() {
               aria-controls={`tabpanel-${tab}`}
               className={`flex-1 rounded-md py-1.5 text-sm font-medium transition-colors ${
                 activeTab === tab
-                  ? 'bg-blue-600 text-white'
+                  ? 'bg-primary-600 text-white'
                   : 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'
               }`}
             >
@@ -179,7 +179,7 @@ export default function App() {
                   type="button"
                   onClick={handleDownload}
                   disabled={!outputDir}
-                  className="w-full cursor-pointer rounded-md bg-blue-600 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="w-full cursor-pointer rounded-md bg-primary-600 py-2 text-sm font-semibold text-white hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Download {format.toUpperCase()}
                 </button>

@@ -68,7 +68,7 @@ export function BatchDownload({ defaultFormat, defaultBitrate, defaultOutputDir 
           type="button"
           onClick={handleDownloadAll}
           disabled={!canDownload}
-          className="w-full cursor-pointer rounded-md bg-blue-600 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+          className="w-full cursor-pointer rounded-md bg-primary-600 py-2 text-sm font-semibold text-white hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {downloading
             ? 'Downloading…'
