@@ -21,7 +21,7 @@ export function FormatSelector({ value, onChange }: FormatSelectorProps) {
         <select
           value={value}
           onChange={(e) => onChange(e.target.value as AudioFormat)}
-          className="w-full cursor-pointer appearance-none rounded-md border border-gray-300 bg-white pl-4 pr-10 py-2.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+          className="w-full cursor-pointer appearance-none rounded-md border border-primary-200 bg-primary-50 pl-4 pr-10 py-2.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
         >
           {FORMATS.map((f) => (
             <option key={f.value} value={f.value}>

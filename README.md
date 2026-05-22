@@ -9,10 +9,13 @@ Built with **Tauri 2** (Rust backend) + **React + Vite** (frontend).
 ## Features
 
 - 🎵 Download audio as **mp3, m4a, wav, ogg, or flac**
+- 📦 **Batch download** — queue up to 20 URLs, downloads 3 at a time
 - ✂️ **Visual waveform trim** — drag region handles or type start/end times
 - 👁 **Audio preview** — WaveSurfer.js waveform before downloading
 - 📁 **Native folder picker** — via Tauri dialog plugin
-- 📋 **Live job queue** — progress per download
+- 📋 **Live job queue** — per-download progress tracking
+- ⚙️ **Persistent settings** — default format, bitrate, and output folder saved to app config
+- 🌙 **Dark mode**
 - 🖥 **Three modes** — Desktop app, Web UI, or CLI
 
 ---
@@ -79,40 +82,20 @@ brew install yt-dlp ffmpeg
 ### Desktop app (Tauri) — additional
 - **Rust** toolchain: `rustup update stable`
 - **Xcode license** accepted: `sudo xcodebuild -license accept`
-- Platform-tagged sidecar binaries in `src-tauri/binaries/` (see [Sidecar Setup](#sidecar-setup))
 
 ---
 
 ## Setup
 
 ```bash
-# Install all dependencies
+# Install all dependencies (also downloads sidecar binaries for the desktop app)
 npm install
 npm install --prefix client
 ```
 
----
+`npm install` runs `scripts/download-binaries.sh` automatically via `postinstall`. It detects your platform, downloads the correct `yt-dlp` and `ffmpeg` builds, and places them in `src-tauri/binaries/` with the required Rust target triple suffix.
 
-## Sidecar Setup (Desktop App Only)
-
-Tauri bundles `yt-dlp` and `ffmpeg` as sidecars. Binaries must be named with the platform triple.
-
-**macOS (Apple Silicon):**
-```bash
-mkdir -p src-tauri/binaries
-curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_macos \
-  -o src-tauri/binaries/yt-dlp-aarch64-apple-darwin
-chmod +x src-tauri/binaries/yt-dlp-aarch64-apple-darwin
-
-# ffmpeg — download a static build and copy the binary:
-# https://evermeet.cx/ffmpeg/
-cp /path/to/ffmpeg src-tauri/binaries/ffmpeg-aarch64-apple-darwin
-chmod +x src-tauri/binaries/ffmpeg-aarch64-apple-darwin
-```
-
-**macOS (Intel):** use `x86_64-apple-darwin` suffix
-**Linux:** use `x86_64-unknown-linux-gnu` suffix
-**Windows:** use `x86_64-pc-windows-msvc` suffix (add `.exe`)
+> **Manual sidecar setup** (if the script fails): see [Sidecar Setup](#sidecar-setup-manual).
 
 The CLI and Web modes use `yt-dlp` and `ffmpeg` from your system `PATH` — no sidecar setup needed.
 
@@ -127,10 +110,11 @@ youtube-audio-downloader/
 │   │   ├── commands/
 │   │   │   ├── info.rs         # get_video_info — yt-dlp --dump-json
 │   │   │   ├── preview.rs      # extract_preview_audio — temp file for WaveSurfer
-│   │   │   └── download.rs     # download_audio — yt-dlp + ffmpeg + progress events
+│   │   │   ├── download.rs     # download_audio — yt-dlp + ffmpeg + progress events
+│   │   │   └── settings.rs     # get_settings / save_settings — app config dir JSON
 │   │   └── utils/
 │   │       ├── sidecar.rs      # yt-dlp / ffmpeg sidecar helpers
-│   │       ├── types.rs        # VideoInfo, JobProgress structs
+│   │       ├── types.rs        # VideoInfo, JobProgress, AppSettings structs
 │   │       └── validation.rs   # YouTube URL validation
 │   ├── binaries/               # Platform-tagged sidecar binaries (git-ignored)
 │   └── tauri.conf.json
@@ -141,16 +125,23 @@ youtube-audio-downloader/
 │       │   └── types.ts        # Shared TS types
 │       ├── hooks/
 │       │   ├── useVideoInfo.ts
-│       │   ├── usePreview.ts   # convertFileSrc() for WaveSurfer
-│       │   └── useDownloadJob.ts
+│       │   ├── usePreview.ts      # convertFileSrc() for WaveSurfer
+│       │   ├── useDownloadJob.ts
+│       │   ├── useBatchDownload.ts  # batch queue + concurrent download logic
+│       │   ├── useSettings.ts     # load/save persistent settings via Rust
+│       │   └── useDarkMode.ts
 │       └── components/
 │           ├── UrlInput.tsx
 │           ├── VideoInfoCard.tsx
 │           ├── FormatSelector.tsx
-│           ├── OutputFolder.tsx  # Tauri dialog plugin
-│           ├── AudioPreview.tsx  # WaveSurfer + RegionsPlugin
+│           ├── OutputFolder.tsx      # Tauri dialog plugin
+│           ├── AudioPreview.tsx      # WaveSurfer + RegionsPlugin
 │           ├── TrimControls.tsx
-│           └── JobQueue.tsx
+│           ├── JobQueue.tsx
+│           ├── BatchDownload.tsx     # batch tab UI
+│           ├── BatchUrlInput.tsx
+│           ├── BatchItemRow.tsx
+│           └── SettingsModal.tsx
 ├── src/                        # Node.js backend (CLI + web mode)
 │   ├── core/
 │   │   ├── downloader.ts       # yt-dlp + ffmpeg via child_process
@@ -160,23 +151,33 @@ youtube-audio-downloader/
 │   │   └── prompts.ts          # inquirer prompts
 │   └── server/
 │       └── index.ts            # Express server (web mode)
-└── package.json
+└── scripts/
+    └── download-binaries.sh    # auto-downloads sidecar binaries on npm install
 ```
 
 ### How the desktop app works
 
 ```
 Rust (Tauri core)
-  └── invoke("get_video_info", { url })   → runs yt-dlp --dump-json
-  └── invoke("extract_preview_audio")    → yt-dlp → temp file → path returned
-  └── invoke("download_audio", {...})    → yt-dlp → ffmpeg → emits progress events
+  └── invoke("get_video_info", { url })    → yt-dlp --dump-json
+  └── invoke("extract_preview_audio")     → yt-dlp → temp file → path returned
+  └── invoke("download_audio", {...})     → yt-dlp → ffmpeg → emits progress events
+  └── invoke("get_settings")             → reads app config dir / settings.json
+  └── invoke("save_settings", {...})     → writes app config dir / settings.json
 
 React (WebView)
-  └── @tauri-apps/api invoke()           → calls Rust commands
-  └── @tauri-apps/api listen()           → receives "download-progress" events
-  └── convertFileSrc(tempPath)           → safe URL for WaveSurfer
-  └── @tauri-apps/plugin-dialog open()   → native folder picker
+  └── @tauri-apps/api invoke()            → calls Rust commands
+  └── @tauri-apps/api listen()            → receives "download-progress" / "download-complete" events
+  └── convertFileSrc(tempPath)            → safe URL for WaveSurfer
+  └── @tauri-apps/plugin-dialog open()    → native folder picker
 ```
+
+### Batch download
+
+- Up to **20 URLs** queued (`MAX_BATCH_URLS = 20`)
+- Video info fetched in parallel as URLs are added
+- Downloads run with **3 concurrent workers** (`MAX_CONCURRENT_DOWNLOADS = 3`) via `runWithConcurrency` in `useBatchDownload.ts`
+- Each item uses its own `jobId` (UUID) for progress tracking via Tauri events
 
 ---
 
@@ -189,6 +190,7 @@ React (WebView)
 | `npm run dev:web` | Web mode — Express `:3001` + Vite `:5173` |
 | `npm run serve` | Express server only |
 | `npm run cli` | CLI mode |
+| `npm run setup` | Re-run sidecar binary download script |
 
 ---
 
@@ -206,3 +208,30 @@ React (WebView)
 | IPC | @tauri-apps/api invoke / listen |
 | Web server (optional) | Express |
 | CLI | commander + inquirer + ora |
+
+---
+
+## Sidecar Setup (Manual)
+
+If `npm install` fails to download the sidecar binaries, you can set them up manually. Binaries must be named with the Rust target triple suffix.
+
+**macOS (Apple Silicon):**
+```bash
+mkdir -p src-tauri/binaries
+
+# yt-dlp
+curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_macos \
+  -o src-tauri/binaries/yt-dlp-aarch64-apple-darwin
+chmod +x src-tauri/binaries/yt-dlp-aarch64-apple-darwin
+
+# ffmpeg — copy from Homebrew
+cp "$(brew --prefix ffmpeg)/bin/ffmpeg" src-tauri/binaries/ffmpeg-aarch64-apple-darwin
+chmod +x src-tauri/binaries/ffmpeg-aarch64-apple-darwin
+```
+
+| Platform | Triple suffix |
+|---|---|
+| macOS Apple Silicon | `aarch64-apple-darwin` |
+| macOS Intel | `x86_64-apple-darwin` |
+| Linux x86_64 | `x86_64-unknown-linux-gnu` |
+| Windows x86_64 | `x86_64-pc-windows-msvc` (add `.exe`) |

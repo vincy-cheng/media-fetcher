@@ -85,3 +85,32 @@ pub struct DownloadCompleteEvent {
     pub job_id: String,
     pub output_path: String,
 }
+
+/// Status of a single sidecar binary.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolInfo {
+    /// The version string if the binary ran successfully, e.g. "2025.04.30".
+    pub version: Option<String>,
+    /// Non-null when the binary could not be executed.
+    pub error: Option<String>,
+}
+
+/// Returned by the `check_tools_status` command.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolsStatus {
+    pub ytdlp: ToolInfo,
+    pub ffmpeg: ToolInfo,
+}
+
+/// Emitted as the `ytdlp-update-progress` Tauri event during an update.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UpdateProgress {
+    /// 0–100
+    pub percent: u8,
+    /// One of: "connecting", "downloading", "installing", "complete", "error"
+    pub stage: String,
+    pub message: String,
+}

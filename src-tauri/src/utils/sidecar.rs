@@ -72,6 +72,14 @@ mod tests {
         });
         assert!(cookie_args(&cfg).is_empty());
     }
+
+    #[test]
+    fn ytdlp_override_filename() {
+        // The override binary should be named "yt-dlp" (no extension on macOS/Linux)
+        let dir = std::path::PathBuf::from("/tmp/fake_app_data");
+        let override_path = dir.join("yt-dlp");
+        assert_eq!(override_path.file_name().unwrap(), "yt-dlp");
+    }
 }
 
 /// Whitelists browser names for `--cookies-from-browser`.
@@ -87,8 +95,35 @@ fn sanitize_browser(browser: &str) -> String {
     }
 }
 
-/// Runs yt-dlp sidecar with the given arguments and returns stdout.
+/// Runs yt-dlp with the given arguments and returns stdout.
+/// Prefers a user-installed override at `app_local_data_dir/yt-dlp` over the bundled sidecar.
 pub async fn run_ytdlp(app: &AppHandle, args: Vec<String>) -> Result<String, String> {
+    use tauri::Manager;
+
+    // Check for user-installed override binary
+    let override_path = app
+        .path()
+        .app_local_data_dir()
+        .ok()
+        .map(|d| d.join("yt-dlp"));
+
+    if let Some(ref path) = override_path {
+        if path.exists() {
+            let output = tokio::process::Command::new(path)
+                .args(&args)
+                .output()
+                .await
+                .map_err(|e| format!("yt-dlp override error: {e}"))?;
+
+            if output.status.success() {
+                return Ok(String::from_utf8_lossy(&output.stdout).to_string());
+            } else {
+                return Err(String::from_utf8_lossy(&output.stderr).to_string());
+            }
+        }
+    }
+
+    // Fall back to bundled sidecar
     let output = app
         .shell()
         .sidecar("yt-dlp")

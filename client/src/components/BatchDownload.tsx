@@ -1,31 +1,46 @@
 // client/src/components/BatchDownload.tsx
-import { useState } from 'react'
-import { BatchUrlInput } from '@/components/BatchUrlInput'
-import { BatchItemRow } from '@/components/BatchItemRow'
-import { FormatSelector } from '@/components/FormatSelector'
-import { OutputFolder } from '@/components/OutputFolder'
-import { useBatchDownload } from '@/hooks/useBatchDownload'
-import type { AudioFormat, Bitrate } from '@/api/types'
+import { useState } from "react";
+import { BatchUrlInput } from "@/components/BatchUrlInput";
+import { BatchItemRow } from "@/components/BatchItemRow";
+import { FormatSelector } from "@/components/FormatSelector";
+import { OutputFolder } from "@/components/OutputFolder";
+import { useBatchDownload } from "@/hooks/useBatchDownload";
+import type { AudioFormat, Bitrate } from "@/api/types";
 
 interface BatchDownloadProps {
-  defaultFormat: AudioFormat
-  defaultBitrate: Bitrate
-  defaultOutputDir: string
+  defaultFormat: AudioFormat;
+  defaultBitrate: Bitrate;
+  defaultOutputDir: string;
 }
 
-export function BatchDownload({ defaultFormat, defaultBitrate, defaultOutputDir }: BatchDownloadProps) {
-  const { items, downloading, addUrl, retryInfo, removeItem, downloadAll, clearAll } = useBatchDownload()
-  const [format, setFormat] = useState<AudioFormat>(defaultFormat)
-  const [bitrate] = useState<Bitrate>(defaultBitrate)
-  const [outputDir, setOutputDir] = useState(defaultOutputDir)
+export function BatchDownload({
+  defaultFormat,
+  defaultBitrate,
+  defaultOutputDir,
+}: BatchDownloadProps) {
+  const {
+    items,
+    downloading,
+    addUrl,
+    retryInfo,
+    removeItem,
+    downloadAll,
+    clearAll,
+  } = useBatchDownload();
+  const [format, setFormat] = useState<AudioFormat>(defaultFormat);
+  const [bitrate] = useState<Bitrate>(defaultBitrate);
+  const [outputDir, setOutputDir] = useState(defaultOutputDir);
 
-  const readyCount = items.filter((i) => i.info && !i.infoLoading && !i.infoError).length
-  const canDownload = readyCount > 0 && outputDir.trim().length > 0 && !downloading
+  const readyCount = items.filter(
+    (i) => i.info && !i.infoLoading && !i.infoError,
+  ).length;
+  const canDownload =
+    readyCount > 0 && outputDir.trim().length > 0 && !downloading;
 
   const handleDownloadAll = () => {
-    if (!canDownload) return
-    downloadAll(format, bitrate, outputDir)
-  }
+    if (!canDownload) return;
+    downloadAll(format, bitrate, outputDir);
+  };
 
   return (
     <div className="space-y-4">
@@ -35,7 +50,7 @@ export function BatchDownload({ defaultFormat, defaultBitrate, defaultOutputDir 
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-sm text-gray-600 dark:text-gray-400">
-              {items.length} URL{items.length !== 1 ? 's' : ''} queued
+              {items.length} URL{items.length !== 1 ? "s" : ""} queued
               {readyCount < items.length && ` (${readyCount} ready)`}
             </span>
             <button
@@ -61,7 +76,7 @@ export function BatchDownload({ defaultFormat, defaultBitrate, defaultOutputDir 
         </div>
       )}
 
-      <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800 space-y-4">
+      <div className="rounded-lg border border-primary-200 bg-primary-50 p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800 space-y-4">
         <FormatSelector value={format} onChange={setFormat} />
         <OutputFolder value={outputDir} onChange={setOutputDir} />
         <button
@@ -71,10 +86,10 @@ export function BatchDownload({ defaultFormat, defaultBitrate, defaultOutputDir 
           className="w-full cursor-pointer rounded-md bg-primary-600 py-2 text-sm font-semibold text-white hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {downloading
-            ? 'Downloading…'
-            : `Download All ${format.toUpperCase()}${readyCount > 0 ? ` (${readyCount})` : ''}`}
+            ? "Downloading…"
+            : `Download All ${format.toUpperCase()}${readyCount > 0 ? ` (${readyCount})` : ""}`}
         </button>
       </div>
     </div>
-  )
+  );
 }

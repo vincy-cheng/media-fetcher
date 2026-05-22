@@ -1,5 +1,6 @@
 import { Skeleton } from '@/components/ui/Skeleton'
 import type { BatchItem } from '@/hooks/useBatchDownload'
+import { Cross2Icon } from '@radix-ui/react-icons'
 
 const STAGE_LABELS: Record<string, string> = {
   downloading: 'Downloading',
@@ -9,7 +10,7 @@ const STAGE_LABELS: Record<string, string> = {
 }
 
 const STAGE_COLORS: Record<string, string> = {
-  downloading: 'bg-primary-500',
+  downloading: 'bg-primary-300',
   converting: 'bg-indigo-500',
   complete: 'bg-green-500',
   error: 'bg-red-500',
@@ -28,7 +29,7 @@ export function BatchItemRow({ item, onRemove, onRetry }: BatchItemRowProps) {
     item.progress.stage !== 'error'
 
   return (
-    <div className="flex items-start gap-3 rounded-lg border border-gray-200 bg-white p-3 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+    <div className="flex items-start gap-3 rounded-lg border border-primary-200 bg-primary-50 p-3 shadow-sm dark:border-gray-700 dark:bg-gray-800">
       {/* Thumbnail */}
       {item.infoLoading ? (
         <Skeleton className="h-14 w-20 shrink-0 rounded dark:bg-gray-700" />
@@ -39,7 +40,7 @@ export function BatchItemRow({ item, onRemove, onRetry }: BatchItemRowProps) {
           className="h-14 w-20 shrink-0 rounded object-cover"
         />
       ) : (
-        <div className="h-14 w-20 shrink-0 rounded bg-gray-100 dark:bg-gray-700" />
+        <div className="h-14 w-20 shrink-0 rounded bg-primary-100 dark:bg-gray-700" />
       )}
 
       {/* Main content */}
@@ -57,7 +58,7 @@ export function BatchItemRow({ item, onRemove, onRetry }: BatchItemRowProps) {
               type="button"
               onClick={() => onRetry(item.id)}
               aria-label="Retry fetching video information"
-              className="shrink-0 text-xs text-primary-600 underline hover:text-primary-800 dark:text-primary-400 dark:hover:text-primary-300"
+              className="shrink-0 text-xs text-primary-700 underline hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-300"
             >
               Retry
             </button>
@@ -123,7 +124,7 @@ export function BatchItemRow({ item, onRemove, onRetry }: BatchItemRowProps) {
         aria-label={`Remove ${item.info?.title ?? item.url}`}
         className="shrink-0 cursor-pointer rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 disabled:cursor-not-allowed disabled:opacity-40 dark:hover:bg-gray-700 dark:hover:text-gray-300"
       >
-        ✕
+        <Cross2Icon />
       </button>
     </div>
   )

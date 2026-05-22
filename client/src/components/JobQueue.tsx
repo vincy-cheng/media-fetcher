@@ -8,7 +8,7 @@ const STAGE_LABELS: Record<string, string> = {
 }
 
 const STAGE_COLORS: Record<string, string> = {
-  downloading: 'bg-primary-500',
+  downloading: 'bg-primary-300',
   converting: 'bg-indigo-500',
   complete: 'bg-green-500',
   error: 'bg-red-500',
@@ -36,7 +36,7 @@ export function JobQueue({ jobs, onClear }: JobQueueProps) {
         )}
       </div>
       {jobs.map((job) => (
-        <div key={job.id} className="rounded-lg border border-gray-200 bg-white p-3 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+        <div key={job.id} className="rounded-lg border border-primary-200 bg-primary-50 p-3 shadow-sm dark:border-gray-700 dark:bg-gray-800">
           <div className="mb-2 flex items-center justify-between gap-2">
             <span className="truncate text-xs text-gray-600 dark:text-gray-400">{job.url}</span>
             <span

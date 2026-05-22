@@ -53,3 +53,19 @@ export interface AppSettings {
   cookieConfig: CookieConfig
   downloadPreferences: DownloadPreferences
 }
+
+export interface ToolInfo {
+  version: string | null
+  error: string | null
+}
+
+export interface ToolsStatus {
+  ytdlp: ToolInfo
+  ffmpeg: ToolInfo
+}
+
+export interface UpdateProgress {
+  percent: number
+  stage: 'connecting' | 'downloading' | 'installing' | 'complete' | 'error'
+  message: string
+}

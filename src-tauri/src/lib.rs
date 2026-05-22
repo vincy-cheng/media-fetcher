@@ -6,6 +6,7 @@ use commands::{
     info::get_video_info,
     preview::extract_preview_audio,
     settings::{get_settings, save_settings},
+    tools::{check_tools_status, check_ytdlp_update, update_ytdlp},
 };
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -21,6 +22,9 @@ pub fn run() {
             download_audio,
             get_settings,
             save_settings,
+            check_tools_status,
+            check_ytdlp_update,
+            update_ytdlp,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
