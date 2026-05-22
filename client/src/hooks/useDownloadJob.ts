@@ -1,3 +1,4 @@
+// client/src/hooks/useDownloadJob.ts
 import { useState, useCallback, useEffect } from 'react'
 import { downloadAudio, onDownloadProgress, onDownloadComplete } from '@/api/client'
 import type { DownloadOptions, JobProgress } from '@/api/types'
@@ -12,59 +13,63 @@ export interface Job {
 
 export function useDownloadJob() {
   const [jobs, setJobs] = useState<Job[]>([])
+
   useEffect(() => {
-    let unlistenProgress: (() => void) | undefined
-    let unlistenComplete: (() => void) | undefined
-
-    onDownloadProgress((progress) => {
-      setJobs((prev) =>
-        prev.map((j) =>
-          j.progress.stage !== 'complete' ? { ...j, progress } : j
+    const unlistenPromises: [Promise<() => void>, Promise<() => void>] = [
+      onDownloadProgress((progress) => {
+        setJobs((prev) =>
+          prev.map((j) => j.id === progress.jobId ? { ...j, progress } : j)
         )
-      )
-    }).then((fn) => { unlistenProgress = fn })
-
-    onDownloadComplete((outputPath) => {
-      setJobs((prev) =>
-        prev.map((j) =>
-          j.progress.stage !== 'complete'
-            ? { ...j, outputPath, progress: { percent: 100, stage: 'complete', message: `Saved: ${outputPath}` } }
-            : j
+      }),
+      onDownloadComplete((payload) => {
+        setJobs((prev) =>
+          prev.map((j) =>
+            j.id === payload.jobId
+              ? {
+                  ...j,
+                  outputPath: payload.outputPath,
+                  progress: {
+                    jobId: payload.jobId,
+                    percent: 100,
+                    stage: 'complete',
+                    message: `Saved: ${payload.outputPath}`,
+                  },
+                }
+              : j
+          )
         )
-      )
-    }).then((fn) => { unlistenComplete = fn })
+      }),
+    ]
 
     return () => {
-      unlistenProgress?.()
-      unlistenComplete?.()
+      Promise.all(unlistenPromises).then((fns) => fns.forEach((fn) => fn()))
     }
   }, [])
 
-  const start = useCallback(async (options: DownloadOptions) => {
+  const start = useCallback(async (options: Omit<DownloadOptions, 'jobId'>) => {
     const id = crypto.randomUUID()
     const newJob: Job = {
       id,
       url: options.url,
       format: options.format,
-      progress: { percent: 0, stage: 'downloading', message: 'Starting…' },
+      progress: { jobId: id, percent: 0, stage: 'downloading', message: 'Starting…' },
     }
     setJobs((prev) => [...prev, newJob])
     try {
-      await downloadAudio(options)
+      await downloadAudio({ ...options, jobId: id })
     } catch (e) {
-      setJobs((prev) =>
-        prev.map((j) =>
+      setJobs((prev) => {
+        if (!prev.some((j) => j.id === id)) return prev
+        return prev.map((j) =>
           j.id === id
-            ? { ...j, progress: { percent: 0, stage: 'error', message: String(e) } }
+            ? { ...j, progress: { jobId: id, percent: 0, stage: 'error', message: String(e) } }
             : j
         )
-      )
+      })
     }
   }, [])
 
-  const clear = useCallback(() => {
-    setJobs([])
-  }, [])
+  const clear = useCallback(() => { setJobs([]) }, [])
 
   return { jobs, start, clear }
 }

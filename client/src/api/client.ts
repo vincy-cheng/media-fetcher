@@ -1,6 +1,7 @@
+// client/src/api/client.ts
 import { invoke } from '@tauri-apps/api/core'
 import { listen, type UnlistenFn } from '@tauri-apps/api/event'
-import type { VideoInfo, DownloadOptions, JobProgress, AppSettings } from './types'
+import type { VideoInfo, DownloadOptions, JobProgress, DownloadCompletePayload, AppSettings } from './types'
 
 export async function getVideoInfo(url: string): Promise<VideoInfo> {
   return invoke<VideoInfo>('get_video_info', { url })
@@ -12,6 +13,7 @@ export async function extractPreviewAudio(url: string): Promise<string> {
 
 export async function downloadAudio(options: DownloadOptions): Promise<string> {
   return invoke<string>('download_audio', {
+    jobId: options.jobId,
     url: options.url,
     format: options.format,
     start: options.start ?? null,
@@ -25,8 +27,8 @@ export function onDownloadProgress(cb: (progress: JobProgress) => void): Promise
   return listen<JobProgress>('download-progress', (e) => cb(e.payload))
 }
 
-export function onDownloadComplete(cb: (outputPath: string) => void): Promise<UnlistenFn> {
-  return listen<string>('download-complete', (e) => cb(e.payload))
+export function onDownloadComplete(cb: (payload: DownloadCompletePayload) => void): Promise<UnlistenFn> {
+  return listen<DownloadCompletePayload>('download-complete', (e) => cb(e.payload))
 }
 
 export async function getSettings(): Promise<AppSettings> {

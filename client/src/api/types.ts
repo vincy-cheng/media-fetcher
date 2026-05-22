@@ -1,4 +1,4 @@
-// Shared types matching Rust structs in src-tauri/src/utils/types.rs
+// client/src/api/types.ts
 
 export interface VideoInfo {
   id: string
@@ -20,12 +20,21 @@ export interface DownloadOptions {
   end?: number
   outputDir: string
   bitrate?: Bitrate
+  /** UUID matching the job_id passed to the Rust download_audio command. */
+  jobId: string
 }
 
 export interface JobProgress {
+  /** Matches job_id from the Rust event payload. */
+  jobId: string
   percent: number
   stage: 'downloading' | 'converting' | 'complete' | 'error'
   message: string
+}
+
+export interface DownloadCompletePayload {
+  jobId: string
+  outputPath: string
 }
 
 export interface CookieConfig {

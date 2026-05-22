@@ -1,25 +1,25 @@
+// src-tauri/src/utils/types.rs
 use serde::{Deserialize, Serialize};
 
-/// How yt-dlp should authenticate to bypass bot-detection.
-#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct CookieConfig {
-    /// "none" | "browser" | "file"
     pub mode: String,
-    /// e.g. "chrome", "firefox", "safari", "edge", "brave"
     pub browser: Option<String>,
-    /// Absolute path to a Netscape cookies.txt file
     pub file_path: Option<String>,
+}
+
+impl Default for CookieConfig {
+    fn default() -> Self {
+        Self { mode: "none".to_string(), browser: None, file_path: None }
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct DownloadPreferences {
-    /// "mp3" | "m4a" | "wav" | "ogg" | "flac"
     pub default_format: String,
-    /// Absolute path or "" if not set
     pub default_output_dir: String,
-    /// Bitrate in kbps. Valid values: 128, 192, 256, 320. Only applied to lossy formats (mp3, m4a, ogg).
     pub default_bitrate: u16,
 }
 
@@ -60,9 +60,28 @@ pub struct DownloadOptions {
     pub output_dir: String,
 }
 
+/// Legacy struct kept for any callers that don't need a job_id.
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct JobProgress {
     pub percent: f64,
     pub stage: String,
     pub message: String,
+}
+
+/// Emitted as "download-progress" Tauri event (includes job_id for per-job tracking).
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct DownloadProgressEvent {
+    pub job_id: String,
+    pub percent: f64,
+    pub stage: String,
+    pub message: String,
+}
+
+/// Emitted as "download-complete" Tauri event.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct DownloadCompleteEvent {
+    pub job_id: String,
+    pub output_path: String,
 }

@@ -2,13 +2,14 @@ use std::path::PathBuf;
 use tauri::{AppHandle, Emitter};
 use crate::utils::{
     sidecar::{run_ytdlp, run_ffmpeg, cookie_args},
-    types::{JobProgress, CookieConfig},
+    types::{CookieConfig, DownloadProgressEvent, DownloadCompleteEvent},
     validation::is_valid_youtube_url,
 };
 
 #[tauri::command]
 pub async fn download_audio(
     app: AppHandle,
+    job_id: String,
     url: String,
     format: String,
     start: Option<f64>,
@@ -22,16 +23,16 @@ pub async fn download_audio(
     }
 
     // Emit: starting download
-    let _ = app.emit("download-progress", JobProgress {
+    let _ = app.emit("download-progress", DownloadProgressEvent {
+        job_id: job_id.clone(),
         percent: 0.0,
         stage: "downloading".to_string(),
         message: "Fetching audio stream…".to_string(),
     });
 
     // Step 1: download raw audio to temp file
-    let ts = timestamp();
     let tmp_dir = std::env::temp_dir();
-    let tmp_template = tmp_dir.join(format!("ytdl_dl_{ts}.%(ext)s"));
+    let tmp_template = tmp_dir.join(format!("ytdl_dl_{job_id}.%(ext)s"));
     let tmp_template_str = tmp_template.to_string_lossy().to_string();
 
     let mut dl_args = vec![
@@ -45,12 +46,13 @@ pub async fn download_audio(
 
     run_ytdlp(&app, dl_args).await?;
 
-    let prefix = format!("ytdl_dl_{ts}");
+    let prefix = format!("ytdl_dl_{job_id}");
     let raw_file = find_file_with_prefix(&tmp_dir, &prefix)
         .map_err(|_| "Downloaded audio file not found".to_string())?;
 
     // Emit: converting
-    let _ = app.emit("download-progress", JobProgress {
+    let _ = app.emit("download-progress", DownloadProgressEvent {
+        job_id: job_id.clone(),
         percent: 50.0,
         stage: "converting".to_string(),
         message: format!("Converting to {format}…"),
@@ -109,26 +111,22 @@ pub async fn download_audio(
     ffmpeg_args.push(output_str.clone());
 
     let args_ref: Vec<&str> = ffmpeg_args.iter().map(|s| s.as_str()).collect();
-    run_ffmpeg(&app, args_ref).await?;
-
+    let ffmpeg_result = run_ffmpeg(&app, args_ref).await;
     let _ = std::fs::remove_file(&raw_file);
+    ffmpeg_result?;
 
-    let _ = app.emit("download-progress", JobProgress {
+    let _ = app.emit("download-progress", DownloadProgressEvent {
+        job_id: job_id.clone(),
         percent: 100.0,
         stage: "complete".to_string(),
         message: format!("Saved to {output_str}"),
     });
-    let _ = app.emit("download-complete", output_str.clone());
+    let _ = app.emit("download-complete", DownloadCompleteEvent {
+        job_id: job_id.clone(),
+        output_path: output_str.clone(),
+    });
 
     Ok(output_str)
-}
-
-fn timestamp() -> u128 {
-    use std::time::{SystemTime, UNIX_EPOCH};
-    SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_millis()
 }
 
 fn find_file_with_prefix(dir: &PathBuf, prefix: &str) -> Result<PathBuf, String> {
