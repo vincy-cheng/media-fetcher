@@ -13,7 +13,9 @@ pub async fn check_tools_status(app: AppHandle) -> Result<ToolsStatus, String> {
 
 async fn probe_ytdlp(app: &AppHandle) -> ToolInfo {
     use crate::utils::sidecar::run_ytdlp;
-    match run_ytdlp(app, vec!["--version".to_string()]).await {
+    // No cancellation needed for version probe — use a never-fired receiver.
+    let (_tx, cancel_rx) = tokio::sync::watch::channel(false);
+    match run_ytdlp(app, vec!["--version".to_string()], cancel_rx).await {
         Ok(out) => {
             let version = out.trim().to_string();
             let version = if version.is_empty() { None } else { Some(version) };

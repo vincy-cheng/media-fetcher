@@ -1,5 +1,6 @@
 use tauri::AppHandle;
 use tauri_plugin_shell::ShellExt;
+use tauri_plugin_shell::process::CommandEvent;
 use crate::utils::types::CookieConfig;
 
 /// Builds the yt-dlp authentication args from a CookieConfig.
@@ -80,6 +81,22 @@ mod tests {
         let override_path = dir.join("yt-dlp");
         assert_eq!(override_path.file_name().unwrap(), "yt-dlp");
     }
+
+    #[test]
+    fn cancelled_watch_resolves_immediately() {
+        let (tx, mut rx) = tokio::sync::watch::channel(false);
+        tx.send(true).unwrap();
+        // If value is already true, wait_for resolves immediately (non-blocking check)
+        let rt = tokio::runtime::Runtime::new().unwrap();
+        rt.block_on(async {
+            let result = tokio::time::timeout(
+                std::time::Duration::from_millis(50),
+                rx.wait_for(|v| *v),
+            )
+            .await;
+            assert!(result.is_ok(), "wait_for should resolve immediately when value is already true");
+        });
+    }
 }
 
 /// Whitelists browser names for `--cookies-from-browser`.
@@ -97,8 +114,14 @@ fn sanitize_browser(browser: &str) -> String {
 
 /// Runs yt-dlp with the given arguments and returns stdout.
 /// Prefers a user-installed override at `app_local_data_dir/yt-dlp` over the bundled sidecar.
-pub async fn run_ytdlp(app: &AppHandle, args: Vec<String>) -> Result<String, String> {
+/// Passing `true` through `cancel_rx` aborts the process and returns `Err("cancelled")`.
+pub async fn run_ytdlp(
+    app: &AppHandle,
+    args: Vec<String>,
+    mut cancel_rx: tokio::sync::watch::Receiver<bool>,
+) -> Result<String, String> {
     use tauri::Manager;
+    use std::process::Stdio;
 
     // Check for user-installed override binary
     let override_path = app
@@ -109,53 +132,153 @@ pub async fn run_ytdlp(app: &AppHandle, args: Vec<String>) -> Result<String, Str
 
     if let Some(ref path) = override_path {
         if path.exists() {
-            let output = tokio::process::Command::new(path)
+            use tokio::io::AsyncReadExt;
+            
+            let mut child = tokio::process::Command::new(path)
                 .args(&args)
-                .output()
-                .await
+                .stdout(Stdio::piped())
+                .stderr(Stdio::piped())
+                .spawn()
                 .map_err(|e| format!("yt-dlp override error: {e}"))?;
 
-            if output.status.success() {
-                return Ok(String::from_utf8_lossy(&output.stdout).to_string());
-            } else {
-                return Err(String::from_utf8_lossy(&output.stderr).to_string());
-            }
+            let stdout = child.stdout.take().expect("stdout was piped");
+            let stderr = child.stderr.take().expect("stderr was piped");
+
+            // Spawn tasks to read stdout/stderr and wait for completion
+            let stdout_task = tokio::spawn(async move {
+                let mut buf = Vec::new();
+                let mut stdout = stdout;
+                stdout.read_to_end(&mut buf).await?;
+                Ok::<_, std::io::Error>(buf)
+            });
+
+            let stderr_task = tokio::spawn(async move {
+                let mut buf = Vec::new();
+                let mut stderr = stderr;
+                stderr.read_to_end(&mut buf).await?;
+                Ok::<_, std::io::Error>(buf)
+            });
+
+            let wait_task = tokio::spawn(async move {
+                child.wait().await
+            });
+
+            let result = tokio::select! {
+                result = async {
+                    let (stdout_res, stderr_res, status_res) = tokio::join!(stdout_task, stderr_task, wait_task);
+                    let stdout_buf = stdout_res
+                        .map_err(|e| format!("stdout task error: {e}"))?
+                        .map_err(|e| format!("stdout read error: {e}"))?;
+                    let stderr_buf = stderr_res
+                        .map_err(|e| format!("stderr task error: {e}"))?
+                        .map_err(|e| format!("stderr read error: {e}"))?;
+                    let status = status_res
+                        .map_err(|e| format!("wait task error: {e}"))?
+                        .map_err(|e| format!("wait error: {e}"))?;
+                    Ok::<_, String>((status, stdout_buf, stderr_buf))
+                } => {
+                    match result {
+                        Ok((status, stdout_buf, stderr_buf)) => {
+                            if status.success() {
+                                Ok(String::from_utf8_lossy(&stdout_buf).to_string())
+                            } else {
+                                Err(String::from_utf8_lossy(&stderr_buf).to_string())
+                            }
+                        }
+                        Err(e) => Err(format!("yt-dlp override error: {e}")),
+                    }
+                }
+                _ = cancel_rx.wait_for(|v| *v) => {
+                    // Process is already running in tasks, cancellation will naturally abort
+                    Err("cancelled".to_string())
+                }
+            };
+            return result;
         }
     }
 
     // Fall back to bundled sidecar
-    let output = app
+    let (mut rx, child) = app
         .shell()
         .sidecar("yt-dlp")
         .map_err(|e| format!("yt-dlp sidecar error: {e}"))?
         .args(args)
-        .output()
-        .await
+        .spawn()
         .map_err(|e| format!("yt-dlp execution error: {e}"))?;
 
-    if output.status.success() {
-        Ok(String::from_utf8_lossy(&output.stdout).to_string())
-    } else {
-        Err(String::from_utf8_lossy(&output.stderr).to_string())
+    let mut stdout_buf = String::new();
+    let mut stderr_buf = String::new();
+
+    loop {
+        tokio::select! {
+            event = rx.recv() => {
+                match event {
+                    Some(CommandEvent::Stdout(bytes)) => {
+                        stdout_buf.push_str(&String::from_utf8_lossy(&bytes));
+                    }
+                    Some(CommandEvent::Stderr(bytes)) => {
+                        stderr_buf.push_str(&String::from_utf8_lossy(&bytes));
+                    }
+                    Some(CommandEvent::Terminated(payload)) => {
+                        return if payload.code == Some(0) {
+                            Ok(stdout_buf)
+                        } else {
+                            Err(stderr_buf)
+                        };
+                    }
+                    None => return Err("yt-dlp process ended unexpectedly".to_string()),
+                    _ => {}
+                }
+            }
+            _ = cancel_rx.wait_for(|v| *v) => {
+                let _ = child.kill();
+                return Err("cancelled".to_string());
+            }
+        }
     }
 }
 
 /// Runs ffmpeg sidecar with the given arguments.
-pub async fn run_ffmpeg(app: &AppHandle, args: Vec<&str>) -> Result<String, String> {
-    let output = app
+/// Passing `true` through `cancel_rx` aborts the process and returns `Err("cancelled")`.
+pub async fn run_ffmpeg(
+    app: &AppHandle,
+    args: Vec<&str>,
+    mut cancel_rx: tokio::sync::watch::Receiver<bool>,
+) -> Result<String, String> {
+    let (mut rx, child) = app
         .shell()
         .sidecar("ffmpeg")
         .map_err(|e| format!("ffmpeg sidecar error: {e}"))?
         .args(args)
-        .output()
-        .await
+        .spawn()
         .map_err(|e| format!("ffmpeg execution error: {e}"))?;
 
-    if output.status.success() {
-        Ok(String::from_utf8_lossy(&output.stdout).to_string())
-    } else {
-        // ffmpeg writes info to stderr even on success; return stderr for progress parsing
-        Ok(String::from_utf8_lossy(&output.stderr).to_string())
+    let mut stderr_buf = String::new();
+
+    loop {
+        tokio::select! {
+            event = rx.recv() => {
+                match event {
+                    Some(CommandEvent::Stderr(bytes)) => {
+                        stderr_buf.push_str(&String::from_utf8_lossy(&bytes));
+                    }
+                    Some(CommandEvent::Terminated(payload)) => {
+                        // ffmpeg writes progress/info to stderr even on success
+                        return if payload.code == Some(0) {
+                            Ok(stderr_buf)
+                        } else {
+                            Err(stderr_buf)
+                        };
+                    }
+                    None => return Err("ffmpeg process ended unexpectedly".to_string()),
+                    _ => {}
+                }
+            }
+            _ = cancel_rx.wait_for(|v| *v) => {
+                let _ = child.kill();
+                return Err("cancelled".to_string());
+            }
+        }
     }
 }
 

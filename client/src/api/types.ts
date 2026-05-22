@@ -22,13 +22,15 @@ export interface DownloadOptions {
   bitrate?: Bitrate
   /** UUID matching the job_id passed to the Rust download_audio command. */
   jobId: string
+  /** Video duration in seconds, used for the backend hard-ceiling check. */
+  duration?: number
 }
 
 export interface JobProgress {
   /** Matches job_id from the Rust event payload. */
   jobId: string
   percent: number
-  stage: 'downloading' | 'converting' | 'complete' | 'error'
+  stage: 'downloading' | 'converting' | 'complete' | 'error' | 'cancelled' | 'cancelling'
   message: string
 }
 
@@ -47,6 +49,8 @@ export interface DownloadPreferences {
   defaultFormat: AudioFormat
   defaultOutputDir: string
   defaultBitrate: Bitrate
+  /** User-configured max duration in seconds. null = use the 3-hour absolute ceiling. */
+  maxDurationSeconds: number | null
 }
 
 export interface AppSettings {
@@ -69,3 +73,6 @@ export interface UpdateProgress {
   stage: 'connecting' | 'downloading' | 'installing' | 'complete' | 'error'
   message: string
 }
+
+/** Absolute max duration in seconds (3 hours). Mirrors the Rust constant. */
+export const ABSOLUTE_MAX_DURATION_SECONDS = 10_800

@@ -23,7 +23,9 @@ pub async fn get_video_info(
     args.extend(cookie_args(&cookie_config));
     args.push(url.clone());
 
-    let stdout = run_ytdlp(&app, args).await?;
+    // No cancellation needed for info fetch — use a never-fired receiver.
+    let (_tx, cancel_rx) = tokio::sync::watch::channel(false);
+    let stdout = run_ytdlp(&app, args, cancel_rx).await?;
 
     let json: serde_json::Value =
         serde_json::from_str(&stdout).map_err(|e| format!("Failed to parse video info: {e}"))?;

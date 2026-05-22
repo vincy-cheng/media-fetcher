@@ -18,6 +18,7 @@ import { useSettings } from "@/hooks/useSettings";
 import { useToolStatus } from "@/hooks/useToolStatus";
 import { ToolStatusBanner } from "@/components/ToolStatusBanner";
 import type { AudioFormat, Bitrate } from "@/api/types";
+import { ABSOLUTE_MAX_DURATION_SECONDS } from "@/api/types";
 import { GearIcon, SunIcon, MoonIcon } from "@radix-ui/react-icons";
 
 type Tab = "single" | "batch";
@@ -36,7 +37,7 @@ export default function App() {
     load: loadPreview,
     cancel: cancelPreview,
   } = usePreview();
-  const { jobs, start: startDownload, clear } = useDownloadJob();
+  const { jobs, history, start: startDownload, cancel: cancelDownload, clear } = useDownloadJob();
   const { dark, toggle: toggleDark } = useDarkMode();
   const { settings, loaded, save: saveSettings } = useSettings();
   const toolStatusState = useToolStatus();
@@ -48,6 +49,7 @@ export default function App() {
   const [trimStart, setTrimStart] = useState(0);
   const [trimEnd, setTrimEnd] = useState(0);
   const [showSettings, setShowSettings] = useState(false);
+  const [durationError, setDurationError] = useState<string | null>(null);
   const prefilled = useRef(false);
 
   useEffect(() => {
@@ -73,6 +75,18 @@ export default function App() {
 
   const handleDownload = async () => {
     if (!info || !outputDir) return;
+    setDurationError(null);
+
+    const prefs = settings.downloadPreferences;
+    const maxSec = prefs.maxDurationSeconds ?? ABSOLUTE_MAX_DURATION_SECONDS;
+    if (info.duration > 0 && info.duration > maxSec) {
+      const maxMin = Math.round(maxSec / 60);
+      setDurationError(
+        `This video is too long (limit: ${maxMin} min). Adjust the limit in Settings.`
+      );
+      return;
+    }
+
     await startDownload({
       url: info.url,
       format,
@@ -80,6 +94,7 @@ export default function App() {
       end: trimEnd < info.duration && trimEnd > 0 ? trimEnd : undefined,
       outputDir,
       bitrate,
+      duration: info.duration,
     });
   };
 
@@ -238,6 +253,14 @@ export default function App() {
             <div className="space-y-4 rounded-lg border border-primary-200 bg-primary-50 p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
               <FormatSelector value={format} onChange={setFormat} />
               <OutputFolder value={outputDir} onChange={setOutputDir} />
+              {durationError && (
+                <p
+                  role="alert"
+                  className="rounded-md bg-red-50 p-3 text-sm text-red-600 dark:bg-red-900/30 dark:text-red-400 border border-red-200 dark:border-red-700"
+                >
+                  {durationError}
+                </p>
+              )}
               <button
                 type="button"
                 onClick={handleDownload}
@@ -249,7 +272,7 @@ export default function App() {
             </div>
           )}
 
-          <JobQueue jobs={jobs} onClear={clear} />
+          <JobQueue jobs={jobs} history={history} onClear={clear} onCancel={cancelDownload} />
         </div>
 
         <div
@@ -262,6 +285,7 @@ export default function App() {
             defaultFormat={format}
             defaultBitrate={bitrate}
             defaultOutputDir={outputDir}
+            maxDurationSeconds={settings.downloadPreferences.maxDurationSeconds}
           />
         </div>
       </div>

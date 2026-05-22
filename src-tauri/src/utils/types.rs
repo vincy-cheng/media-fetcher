@@ -1,5 +1,8 @@
 // src-tauri/src/utils/types.rs
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+use std::sync::Mutex;
+use tokio::sync::watch;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -21,6 +24,9 @@ pub struct DownloadPreferences {
     pub default_format: String,
     pub default_output_dir: String,
     pub default_bitrate: u16,
+    /// User-configurable max duration in seconds. None means use the absolute 3-hour ceiling.
+    #[serde(default)]
+    pub max_duration_seconds: Option<u32>,
 }
 
 impl Default for DownloadPreferences {
@@ -29,6 +35,7 @@ impl Default for DownloadPreferences {
             default_format: "m4a".to_string(),
             default_output_dir: String::new(),
             default_bitrate: 192,
+            max_duration_seconds: None,
         }
     }
 }
@@ -60,14 +67,6 @@ pub struct DownloadOptions {
     pub output_dir: String,
 }
 
-/// Legacy struct kept for any callers that don't need a job_id.
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct JobProgress {
-    pub percent: f64,
-    pub stage: String,
-    pub message: String,
-}
-
 /// Emitted as "download-progress" Tauri event (includes job_id for per-job tracking).
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -90,9 +89,7 @@ pub struct DownloadCompleteEvent {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct ToolInfo {
-    /// The version string if the binary ran successfully, e.g. "2025.04.30".
     pub version: Option<String>,
-    /// Non-null when the binary could not be executed.
     pub error: Option<String>,
 }
 
@@ -108,9 +105,10 @@ pub struct ToolsStatus {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct UpdateProgress {
-    /// 0–100
     pub percent: u8,
-    /// One of: "connecting", "downloading", "installing", "complete", "error"
     pub stage: String,
     pub message: String,
 }
+
+/// Maps job_id → a watch sender. Sending `true` cancels the job.
+pub type CancellationRegistry = Mutex<HashMap<String, watch::Sender<bool>>>;

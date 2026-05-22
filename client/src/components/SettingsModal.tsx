@@ -63,6 +63,12 @@ export function SettingsModal({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [picking, setPicking] = useState(false);
+  // Convert stored seconds to minutes for display; null means "no limit"
+  const [maxDurationMinutes, setMaxDurationMinutes] = useState<string>(
+    prefs.maxDurationSeconds != null
+      ? String(Math.round(prefs.maxDurationSeconds / 60))
+      : ""
+  );
 
   const isLossless = LOSSLESS.includes(format);
 
@@ -88,6 +94,10 @@ export function SettingsModal({
           defaultFormat: format,
           defaultOutputDir: outputDir,
           defaultBitrate: bitrate,
+          maxDurationSeconds:
+            maxDurationMinutes.trim() !== "" && Number(maxDurationMinutes) > 0
+              ? Number(maxDurationMinutes) * 60
+              : null,
         },
       });
       onClose();
@@ -227,6 +237,34 @@ export function SettingsModal({
                   </div>
                 </div>
               )}
+
+              {/* Max Video Duration */}
+              <div className="flex flex-col gap-1.5">
+                <label
+                  htmlFor="maxDuration"
+                  className="text-sm font-medium text-gray-700 dark:text-gray-300"
+                >
+                  Max Video Duration
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    id="maxDuration"
+                    type="number"
+                    min="1"
+                    max="180"
+                    value={maxDurationMinutes}
+                    onChange={(e) => setMaxDurationMinutes(e.target.value)}
+                    placeholder="No limit (3h max)"
+                    className="w-32 rounded-md border border-primary-200 bg-primary-50 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
+                  />
+                  <span className="text-sm text-gray-500 dark:text-gray-400">
+                    minutes
+                  </span>
+                </div>
+                <p className="text-xs text-gray-400 dark:text-gray-500">
+                  Leave empty for no custom limit (absolute max: 3 hours).
+                </p>
+              </div>
 
               {/* Error */}
               {error && (

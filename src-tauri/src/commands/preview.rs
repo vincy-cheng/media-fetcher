@@ -32,7 +32,9 @@ pub async fn extract_preview_audio(
     args.extend(cookie_args(&cookie_config));
     args.push(url.clone());
 
-    run_ytdlp(&app, args).await?;
+    // No cancellation needed for preview — use a never-fired receiver.
+    let (_tx, cancel_rx) = tokio::sync::watch::channel(false);
+    run_ytdlp(&app, args, cancel_rx).await?;
 
     let prefix = format!("ytdl_preview_{frag}");
     let actual = find_file_with_prefix(&tmp_dir, &prefix)?;

@@ -20,7 +20,12 @@ export async function downloadAudio(options: DownloadOptions): Promise<string> {
     end: options.end ?? null,
     outputDir: options.outputDir,
     bitrate: options.bitrate ?? null,
+    duration: options.duration ?? null,
   })
+}
+
+export async function cancelDownload(jobId: string): Promise<void> {
+  return invoke<void>('cancel_download', { jobId })
 }
 
 export function onDownloadProgress(cb: (progress: JobProgress) => void): Promise<UnlistenFn> {

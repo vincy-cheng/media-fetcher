@@ -1,6 +1,6 @@
 // client/src/hooks/useDownloadJob.ts
 import { useState, useCallback, useEffect } from 'react'
-import { downloadAudio, onDownloadProgress, onDownloadComplete } from '@/api/client'
+import { downloadAudio, cancelDownload, onDownloadProgress, onDownloadComplete } from '@/api/client'
 import type { DownloadOptions, JobProgress } from '@/api/types'
 
 export interface Job {
@@ -10,6 +10,8 @@ export interface Job {
   progress: JobProgress
   outputPath?: string
 }
+
+const TERMINAL_STAGES = new Set(['complete', 'error', 'cancelled'])
 
 export function useDownloadJob() {
   const [jobs, setJobs] = useState<Job[]>([])
@@ -58,18 +60,39 @@ export function useDownloadJob() {
     try {
       await downloadAudio({ ...options, jobId: id })
     } catch (e) {
+      const msg = String(e)
       setJobs((prev) => {
         if (!prev.some((j) => j.id === id)) return prev
-        return prev.map((j) =>
-          j.id === id
-            ? { ...j, progress: { jobId: id, percent: 0, stage: 'error', message: String(e) } }
-            : j
-        )
+        return prev.map((j) => {
+          if (j.id !== id) return j
+          if (j.progress.stage === 'cancelled') return j
+          return {
+            ...j,
+            progress: { jobId: id, percent: 0, stage: 'error', message: msg },
+          }
+        })
       })
     }
   }, [])
 
-  const clear = useCallback(() => { setJobs([]) }, [])
+  const cancel = useCallback(async (jobId: string) => {
+    setJobs((prev) =>
+      prev.map((j) =>
+        j.id === jobId && (j.progress.stage === 'downloading' || j.progress.stage === 'converting')
+          ? { ...j, progress: { ...j.progress, stage: 'cancelling', message: 'Cancelling…' } }
+          : j
+      )
+    )
+    await cancelDownload(jobId)
+  }, [])
 
-  return { jobs, start, clear }
+  // Only clear terminal (completed/error/cancelled) jobs — keep active ones
+  const clearHistory = useCallback(() => {
+    setJobs((prev) => prev.filter((j) => !TERMINAL_STAGES.has(j.progress.stage)))
+  }, [])
+
+  const activeJobs = jobs.filter((j) => !TERMINAL_STAGES.has(j.progress.stage))
+  const history = jobs.filter((j) => TERMINAL_STAGES.has(j.progress.stage))
+
+  return { jobs: activeJobs, history, start, cancel, clear: clearHistory }
 }

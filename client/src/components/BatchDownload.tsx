@@ -1,5 +1,5 @@
 // client/src/components/BatchDownload.tsx
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { BatchUrlInput } from "@/components/BatchUrlInput";
 import { BatchItemRow } from "@/components/BatchItemRow";
 import { FormatSelector } from "@/components/FormatSelector";
@@ -7,16 +7,21 @@ import { OutputFolder } from "@/components/OutputFolder";
 import { useBatchDownload } from "@/hooks/useBatchDownload";
 import type { AudioFormat, Bitrate } from "@/api/types";
 
+const PAGE_SIZE = 5;
+const NON_RETRIABLE = new Set(["complete", "downloading", "converting", "cancelling"]);
+
 interface BatchDownloadProps {
   defaultFormat: AudioFormat;
   defaultBitrate: Bitrate;
   defaultOutputDir: string;
+  maxDurationSeconds: number | null;
 }
 
 export function BatchDownload({
   defaultFormat,
   defaultBitrate,
   defaultOutputDir,
+  maxDurationSeconds,
 }: BatchDownloadProps) {
   const {
     items,
@@ -24,34 +29,62 @@ export function BatchDownload({
     addUrl,
     retryInfo,
     removeItem,
+    cancelItem,
     downloadAll,
     clearAll,
   } = useBatchDownload();
   const [format, setFormat] = useState<AudioFormat>(defaultFormat);
   const [bitrate] = useState<Bitrate>(defaultBitrate);
   const [outputDir, setOutputDir] = useState(defaultOutputDir);
+  const [completedPage, setCompletedPage] = useState(1);
 
-  const readyCount = items.filter(
-    (i) => i.info && !i.infoLoading && !i.infoError,
+  const prefilled = useRef(false);
+  useEffect(() => {
+    if (prefilled.current || !defaultOutputDir) return;
+    prefilled.current = true;
+    setOutputDir(defaultOutputDir);
+  }, [defaultOutputDir]);
+
+  // Only truly completed downloads go to the completed section
+  const completedItems = items.filter((i) => i.progress?.stage === "complete");
+  // Everything else (pending, loading, error, cancelled, in-progress) stays in the queue
+  const activeItems = items.filter((i) => i.progress?.stage !== "complete");
+
+  const readyCount = activeItems.filter(
+    (i) =>
+      i.info &&
+      !i.infoLoading &&
+      !i.infoError &&
+      (!i.progress || !NON_RETRIABLE.has(i.progress.stage)),
   ).length;
-  const canDownload =
-    readyCount > 0 && outputDir.trim().length > 0 && !downloading;
+  const canDownload = readyCount > 0 && outputDir.trim().length > 0 && !downloading;
+
+  const totalPages = Math.ceil(completedItems.length / PAGE_SIZE);
+  const pagedCompleted = completedItems.slice(
+    (completedPage - 1) * PAGE_SIZE,
+    completedPage * PAGE_SIZE,
+  );
+
+  // Reset to last valid page if items are removed
+  useEffect(() => {
+    if (completedPage > totalPages && totalPages > 0) setCompletedPage(totalPages);
+  }, [completedPage, totalPages]);
 
   const handleDownloadAll = () => {
     if (!canDownload) return;
-    downloadAll(format, bitrate, outputDir);
+    downloadAll(format, bitrate, outputDir, maxDurationSeconds);
   };
 
   return (
     <div className="space-y-4">
-      <BatchUrlInput count={items.length} onAdd={addUrl} />
+      <BatchUrlInput count={activeItems.length} onAdd={addUrl} />
 
-      {items.length > 0 && (
+      {activeItems.length > 0 && (
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-sm text-gray-600 dark:text-gray-400">
-              {items.length} URL{items.length !== 1 ? "s" : ""} queued
-              {readyCount < items.length && ` (${readyCount} ready)`}
+              {activeItems.length} queued
+              {readyCount < activeItems.length && ` · ${readyCount} ready`}
             </span>
             <button
               type="button"
@@ -59,37 +92,81 @@ export function BatchDownload({
               disabled={downloading}
               className="cursor-pointer text-xs text-gray-400 underline hover:text-gray-600 disabled:cursor-not-allowed disabled:opacity-40 dark:text-gray-500 dark:hover:text-gray-300"
             >
-              Clear all
+              Clear All
             </button>
           </div>
 
-          <div className="max-h-80 space-y-2 overflow-y-auto pr-1">
-            {items.map((item) => (
-              <BatchItemRow
-                key={item.id}
-                item={item}
-                onRemove={removeItem}
-                onRetry={retryInfo}
-              />
-            ))}
-          </div>
+          {activeItems.map((item) => (
+            <BatchItemRow
+              key={item.id}
+              item={item}
+              onRemove={removeItem}
+              onRetry={retryInfo}
+              onCancel={cancelItem}
+            />
+          ))}
         </div>
       )}
 
-      <div className="rounded-lg border border-primary-200 bg-primary-50 p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800 space-y-4">
-        <FormatSelector value={format} onChange={setFormat} />
-        <OutputFolder value={outputDir} onChange={setOutputDir} />
-        <button
-          type="button"
-          onClick={handleDownloadAll}
-          disabled={!canDownload}
-          className="w-full cursor-pointer rounded-md bg-primary-600 py-2 text-sm font-semibold text-white hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {downloading
-            ? "Downloading…"
-            : `Download All ${format.toUpperCase()}${readyCount > 0 ? ` (${readyCount})` : ""}`}
-        </button>
-      </div>
+      <FormatSelector value={format} onChange={setFormat} />
+      <OutputFolder value={outputDir} onChange={setOutputDir} />
+
+      <button
+        type="button"
+        onClick={handleDownloadAll}
+        disabled={!canDownload}
+        className="w-full cursor-pointer rounded-md bg-primary-600 py-2 text-sm font-semibold text-white hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        {downloading
+          ? "Downloading…"
+          : `Download All (${readyCount}) as ${format.toUpperCase()}`}
+      </button>
+
+      {completedItems.length > 0 && (
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <div className="h-px flex-1 bg-gray-200 dark:bg-gray-700" />
+            <span className="text-xs text-gray-400 dark:text-gray-500">
+              Completed ({completedItems.length})
+            </span>
+            <div className="h-px flex-1 bg-gray-200 dark:bg-gray-700" />
+          </div>
+
+          {pagedCompleted.map((item) => (
+            <BatchItemRow
+              key={item.id}
+              item={item}
+              onRemove={removeItem}
+              onRetry={retryInfo}
+              onCancel={cancelItem}
+            />
+          ))}
+
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2">
+              <button
+                type="button"
+                onClick={() => setCompletedPage((p) => Math.max(1, p - 1))}
+                disabled={completedPage === 1}
+                className="rounded px-2 py-1 text-xs text-gray-500 hover:bg-gray-100 disabled:opacity-30 dark:text-gray-400 dark:hover:bg-gray-700"
+              >
+                ‹ Prev
+              </button>
+              <span className="text-xs text-gray-400 dark:text-gray-500">
+                {completedPage} / {totalPages}
+              </span>
+              <button
+                type="button"
+                onClick={() => setCompletedPage((p) => Math.min(totalPages, p + 1))}
+                disabled={completedPage === totalPages}
+                className="rounded px-2 py-1 text-xs text-gray-500 hover:bg-gray-100 disabled:opacity-30 dark:text-gray-400 dark:hover:bg-gray-700"
+              >
+                Next ›
+              </button>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

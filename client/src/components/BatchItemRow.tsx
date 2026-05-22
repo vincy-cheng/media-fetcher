@@ -7,6 +7,8 @@ const STAGE_LABELS: Record<string, string> = {
   converting: "Converting",
   complete: "Complete",
   error: "Error",
+  cancelled: "Cancelled",
+  cancelling: "Cancelling…",
 };
 
 const STAGE_COLORS: Record<string, string> = {
@@ -14,19 +16,27 @@ const STAGE_COLORS: Record<string, string> = {
   converting: "bg-zinc-500",
   complete: "bg-emerald-500",
   error: "bg-red-500",
+  cancelled: "bg-gray-400",
+  cancelling: "bg-yellow-500",
 };
+
+const CANCELLABLE_STAGES = new Set(["downloading", "converting"]);
 
 interface BatchItemRowProps {
   item: BatchItem;
   onRemove: (id: string) => void;
   onRetry: (id: string) => void;
+  onCancel: (id: string) => void;
 }
 
-export function BatchItemRow({ item, onRemove, onRetry }: BatchItemRowProps) {
+export function BatchItemRow({ item, onRemove, onRetry, onCancel }: BatchItemRowProps) {
   const isInProgress =
     item.progress &&
     item.progress.stage !== "complete" &&
-    item.progress.stage !== "error";
+    item.progress.stage !== "error" &&
+    item.progress.stage !== "cancelled";
+
+  const isCancellable = item.progress && CANCELLABLE_STAGES.has(item.progress.stage);
 
   return (
     <div className="flex items-start gap-3 rounded-lg border border-primary-200 bg-primary-50 p-3 shadow-sm dark:border-gray-700 dark:bg-gray-800">
@@ -87,9 +97,21 @@ export function BatchItemRow({ item, onRemove, onRetry }: BatchItemRowProps) {
               >
                 {STAGE_LABELS[item.progress.stage] ?? item.progress.stage}
               </span>
-              <span className="text-xs text-gray-500 dark:text-gray-400">
-                {item.progress.percent.toFixed(0)}%
-              </span>
+              <div className="flex items-center gap-1">
+                <span className="text-xs text-gray-500 dark:text-gray-400">
+                  {item.progress.percent.toFixed(0)}%
+                </span>
+                {isCancellable && (
+                  <button
+                    type="button"
+                    onClick={() => onCancel(item.id)}
+                    aria-label={`Cancel download for ${item.info?.title ?? item.url}`}
+                    className="cursor-pointer rounded p-0.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
+                  >
+                    <Cross2Icon />
+                  </button>
+                )}
+              </div>
             </div>
             <div
               role="progressbar"
@@ -111,7 +133,7 @@ export function BatchItemRow({ item, onRemove, onRetry }: BatchItemRowProps) {
                 {item.outputPath}
               </p>
             )}
-            {item.progress.stage === "error" && (
+            {(item.progress.stage === "error" || item.progress.stage === "cancelled") && (
               <p className="truncate text-xs text-red-500 dark:text-red-400">
                 {item.progress.message}
               </p>

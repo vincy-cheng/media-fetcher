@@ -1,7 +1,8 @@
 // client/src/hooks/useBatchDownload.ts
 import { useState, useCallback, useEffect, useRef } from 'react'
-import { getVideoInfo, downloadAudio, onDownloadProgress, onDownloadComplete } from '@/api/client'
+import { getVideoInfo, downloadAudio, cancelDownload, onDownloadProgress, onDownloadComplete } from '@/api/client'
 import type { VideoInfo, AudioFormat, Bitrate, JobProgress } from '@/api/types'
+import { ABSOLUTE_MAX_DURATION_SECONDS } from '@/api/types'
 import type { UnlistenFn } from '@tauri-apps/api/event'
 
 export const MAX_BATCH_URLS = 20
@@ -16,6 +17,9 @@ export interface BatchItem {
   progress?: JobProgress
   outputPath?: string
 }
+
+/** Stages that mean a download is already running or finished successfully — exclude from Download All */
+const NON_RETRIABLE_STAGES = new Set(['complete', 'downloading', 'converting', 'cancelling'])
 
 export function useBatchDownload() {
   const [items, setItems] = useState<BatchItem[]>([])
@@ -123,19 +127,66 @@ export function useBatchDownload() {
     setItems((prev) => prev.filter((item) => item.id !== id))
   }, [])
 
+  const cancelItem = useCallback(async (id: string) => {
+    setItems((prev) =>
+      prev.map((item) =>
+        item.id === id &&
+        item.progress &&
+        (item.progress.stage === 'downloading' || item.progress.stage === 'converting')
+          ? {
+              ...item,
+              progress: { ...item.progress, stage: 'cancelling', message: 'Cancelling…' },
+            }
+          : item
+      )
+    )
+    await cancelDownload(id)
+  }, [])
+
   const downloadAll = useCallback(
-    async (format: AudioFormat, bitrate: Bitrate, outputDir: string) => {
+    async (format: AudioFormat, bitrate: Bitrate, outputDir: string, maxDurationSeconds: number | null) => {
+      const effectiveMax = maxDurationSeconds ?? ABSOLUTE_MAX_DURATION_SECONDS
       setDownloading(true)
       try {
-        const ready = items.filter((item) => item.info && !item.infoLoading && !item.infoError)
+        const ready = items.filter(
+          (item) =>
+            item.info &&
+            !item.infoLoading &&
+            !item.infoError &&
+            (!item.progress || !NON_RETRIABLE_STAGES.has(item.progress.stage))
+        )
+
+        // Mark items that exceed the duration limit with an error before starting
+        const oversized = ready.filter((item) => (item.info?.duration ?? 0) > effectiveMax)
+        if (oversized.length > 0) {
+          setItems((prev) =>
+            prev.map((item) =>
+              oversized.some((o) => o.id === item.id)
+                ? {
+                    ...item,
+                    progress: {
+                      jobId: item.id,
+                      percent: 0,
+                      stage: 'error',
+                      message: `Video duration exceeds the ${formatDuration(effectiveMax)} limit`,
+                    },
+                  }
+                : item
+            )
+          )
+        }
+
+        const eligible = ready.filter((item) => (item.info?.duration ?? 0) <= effectiveMax)
+
         await runWithConcurrency(
-          ready.map((item) => () =>
+          eligible.map((item) => () =>
             downloadAudio({
               jobId: item.id,
               url: item.url,
               format,
               bitrate,
               outputDir,
+              duration: item.info?.duration,
             })
           ),
           MAX_CONCURRENT_DOWNLOADS
@@ -151,7 +202,14 @@ export function useBatchDownload() {
     setItems([])
   }, [])
 
-  return { items, downloading, addUrl, retryInfo, removeItem, downloadAll, clearAll }
+  return { items, downloading, addUrl, retryInfo, removeItem, cancelItem, downloadAll, clearAll }
+}
+
+function formatDuration(seconds: number): string {
+  const h = Math.floor(seconds / 3600)
+  const m = Math.floor((seconds % 3600) / 60)
+  if (h > 0) return `${h}h ${m}m`
+  return `${m}m`
 }
 
 /**

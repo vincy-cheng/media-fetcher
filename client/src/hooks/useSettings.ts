@@ -6,6 +6,7 @@ const DEFAULT_PREFERENCES: DownloadPreferences = {
   defaultFormat: 'm4a',
   defaultOutputDir: '',
   defaultBitrate: 192,
+  maxDurationSeconds: null,
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
