@@ -118,8 +118,7 @@ export default function App() {
           ))}
         </div>
 
-        {activeTab === 'single' && (
-          <div role="tabpanel" id="tabpanel-single" aria-labelledby="tab-single">
+        <div role="tabpanel" id="tabpanel-single" aria-labelledby="tab-single" hidden={activeTab !== 'single'}>
             <UrlInput onSubmit={fetchInfo} loading={infoLoading} />
 
             {infoError && (
@@ -188,17 +187,14 @@ export default function App() {
 
             <JobQueue jobs={jobs} onClear={clear} />
           </div>
-        )}
 
-        {activeTab === 'batch' && (
-          <div role="tabpanel" id="tabpanel-batch" aria-labelledby="tab-batch">
-            <BatchDownload
-              defaultFormat={format}
-              defaultBitrate={bitrate}
-              defaultOutputDir={outputDir}
-            />
-          </div>
-        )}
+        <div role="tabpanel" id="tabpanel-batch" aria-labelledby="tab-batch" hidden={activeTab !== 'batch'}>
+          <BatchDownload
+            defaultFormat={format}
+            defaultBitrate={bitrate}
+            defaultOutputDir={outputDir}
+          />
+        </div>
       </div>
 
       {showSettings && (
