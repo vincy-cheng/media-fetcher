@@ -34,6 +34,7 @@ export default function App() {
     loading: previewLoading,
     error: previewError,
     load: loadPreview,
+    cancel: cancelPreview,
   } = usePreview();
   const { jobs, start: startDownload, clear } = useDownloadJob();
   const { dark, toggle: toggleDark } = useDarkMode();
@@ -197,7 +198,9 @@ export default function App() {
             <VideoInfoCard
               info={info}
               onPreview={handlePreview}
+              onCancelPreview={cancelPreview}
               previewLoading={previewLoading}
+              previewDisabled={infoLoading}
             />
           )}
 

@@ -1,5 +1,5 @@
 import type { VideoInfo } from "@/api/types";
-import { PlayIcon } from "@radix-ui/react-icons";
+import { PlayIcon, StopIcon } from "@radix-ui/react-icons";
 
 function formatDuration(secs: number): string {
   const h = Math.floor(secs / 3600);
@@ -13,13 +13,17 @@ function formatDuration(secs: number): string {
 interface VideoInfoCardProps {
   info: VideoInfo;
   onPreview?: () => void;
+  onCancelPreview?: () => void;
   previewLoading?: boolean;
+  previewDisabled?: boolean;
 }
 
 export function VideoInfoCard({
   info,
   onPreview,
+  onCancelPreview,
   previewLoading,
+  previewDisabled,
 }: VideoInfoCardProps) {
   return (
     <div className="flex gap-4 rounded-lg border border-primary-200 bg-primary-50 p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
@@ -44,20 +48,24 @@ export function VideoInfoCard({
             {formatDuration(info.duration)}
           </span>
           {onPreview && (
-            <button
-              onClick={onPreview}
-              disabled={previewLoading}
-              className="inline-flex cursor-pointer items-center gap-1 rounded bg-primary-300 px-3 py-1 text-xs font-medium text-primary-800 hover:bg-primary-400 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-indigo-900/30 dark:text-indigo-300 dark:hover:bg-indigo-900/50"
-            >
-              {previewLoading ? (
-                "Loading preview…"
-              ) : (
-                <>
-                  <PlayIcon />
-                  Preview
-                </>
-              )}
-            </button>
+            previewLoading ? (
+              <button
+                onClick={onCancelPreview}
+                className="inline-flex cursor-pointer items-center gap-1 rounded bg-red-100 px-3 py-1 text-xs font-medium text-red-700 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-300 dark:hover:bg-red-900/50"
+              >
+                <StopIcon />
+                Stop
+              </button>
+            ) : (
+              <button
+                onClick={onPreview}
+                disabled={previewDisabled}
+                className="inline-flex cursor-pointer items-center gap-1 rounded bg-primary-300 px-3 py-1 text-xs font-medium text-primary-800 hover:bg-primary-400 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-indigo-900/30 dark:text-indigo-300 dark:hover:bg-indigo-900/50"
+              >
+                <PlayIcon />
+                Preview
+              </button>
+            )
           )}
         </div>
       </div>

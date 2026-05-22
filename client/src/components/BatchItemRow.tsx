@@ -1,32 +1,32 @@
-import { Skeleton } from '@/components/ui/Skeleton'
-import type { BatchItem } from '@/hooks/useBatchDownload'
-import { Cross2Icon } from '@radix-ui/react-icons'
+import { Skeleton } from "@/components/ui/Skeleton";
+import type { BatchItem } from "@/hooks/useBatchDownload";
+import { Cross2Icon } from "@radix-ui/react-icons";
 
 const STAGE_LABELS: Record<string, string> = {
-  downloading: 'Downloading',
-  converting: 'Converting',
-  complete: 'Complete',
-  error: 'Error',
-}
+  downloading: "Downloading",
+  converting: "Converting",
+  complete: "Complete",
+  error: "Error",
+};
 
 const STAGE_COLORS: Record<string, string> = {
-  downloading: 'bg-primary-300',
-  converting: 'bg-indigo-500',
-  complete: 'bg-green-500',
-  error: 'bg-red-500',
-}
+  downloading: "bg-primary-500",
+  converting: "bg-zinc-500",
+  complete: "bg-emerald-500",
+  error: "bg-red-500",
+};
 
 interface BatchItemRowProps {
-  item: BatchItem
-  onRemove: (id: string) => void
-  onRetry: (id: string) => void
+  item: BatchItem;
+  onRemove: (id: string) => void;
+  onRetry: (id: string) => void;
 }
 
 export function BatchItemRow({ item, onRemove, onRetry }: BatchItemRowProps) {
   const isInProgress =
     item.progress &&
-    item.progress.stage !== 'complete' &&
-    item.progress.stage !== 'error'
+    item.progress.stage !== "complete" &&
+    item.progress.stage !== "error";
 
   return (
     <div className="flex items-start gap-3 rounded-lg border border-primary-200 bg-primary-50 p-3 shadow-sm dark:border-gray-700 dark:bg-gray-800">
@@ -53,7 +53,9 @@ export function BatchItemRow({ item, onRemove, onRetry }: BatchItemRowProps) {
           </div>
         ) : item.infoError ? (
           <div className="flex items-center gap-2">
-            <p className="truncate text-xs text-red-500 dark:text-red-400">{item.infoError}</p>
+            <p className="truncate text-xs text-red-500 dark:text-red-400">
+              {item.infoError}
+            </p>
             <button
               type="button"
               onClick={() => onRetry(item.id)}
@@ -81,7 +83,7 @@ export function BatchItemRow({ item, onRemove, onRetry }: BatchItemRowProps) {
           <>
             <div className="flex items-center justify-between gap-2">
               <span
-                className={`rounded-full px-2 py-0.5 text-xs font-medium text-white ${STAGE_COLORS[item.progress.stage] ?? 'bg-gray-400'}`}
+                className={`rounded-full px-2 py-0.5 text-xs font-medium text-white ${STAGE_COLORS[item.progress.stage] ?? "bg-gray-400"}`}
               >
                 {STAGE_LABELS[item.progress.stage] ?? item.progress.stage}
               </span>
@@ -94,11 +96,13 @@ export function BatchItemRow({ item, onRemove, onRetry }: BatchItemRowProps) {
               aria-valuenow={item.progress.percent}
               aria-valuemin={0}
               aria-valuemax={100}
-              aria-label={STAGE_LABELS[item.progress.stage] ?? item.progress.stage}
+              aria-label={
+                STAGE_LABELS[item.progress.stage] ?? item.progress.stage
+              }
               className="h-1.5 w-full rounded-full bg-gray-100 dark:bg-gray-700"
             >
               <div
-                className={`h-1.5 rounded-full transition-all ${STAGE_COLORS[item.progress.stage] ?? 'bg-gray-400'}`}
+                className={`h-1.5 rounded-full transition-all ${STAGE_COLORS[item.progress.stage] ?? "bg-gray-400"}`}
                 style={{ width: `${item.progress.percent}%` }}
               />
             </div>
@@ -107,7 +111,7 @@ export function BatchItemRow({ item, onRemove, onRetry }: BatchItemRowProps) {
                 {item.outputPath}
               </p>
             )}
-            {item.progress.stage === 'error' && (
+            {item.progress.stage === "error" && (
               <p className="truncate text-xs text-red-500 dark:text-red-400">
                 {item.progress.message}
               </p>
@@ -127,13 +131,14 @@ export function BatchItemRow({ item, onRemove, onRetry }: BatchItemRowProps) {
         <Cross2Icon />
       </button>
     </div>
-  )
+  );
 }
 
 function formatDuration(seconds: number): string {
-  const h = Math.floor(seconds / 3600)
-  const m = Math.floor((seconds % 3600) / 60)
-  const s = Math.floor(seconds % 60)
-  if (h > 0) return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
-  return `${m}:${String(s).padStart(2, '0')}`
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = Math.floor(seconds % 60);
+  if (h > 0)
+    return `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+  return `${m}:${String(s).padStart(2, "0")}`;
 }

@@ -7,8 +7,10 @@ export function usePreview() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const blobUrlRef = useRef<string | null>(null)
+  const cancelledRef = useRef(false)
 
   const load = useCallback(async (url: string) => {
+    cancelledRef.current = false
     setLoading(true)
     setError(null)
     setAudioUrl(null)
@@ -19,17 +21,25 @@ export function usePreview() {
     }
     try {
       const tempPath = await extractPreviewAudio(url)
+      if (cancelledRef.current) return
       const bytes = await readFile(tempPath)
+      if (cancelledRef.current) return
       const blob = new Blob([bytes], { type: 'audio/webm' })
       const blobUrl = URL.createObjectURL(blob)
       blobUrlRef.current = blobUrl
       setAudioUrl(blobUrl)
     } catch (e) {
-      setError(String(e))
+      if (!cancelledRef.current) setError(String(e))
     } finally {
-      setLoading(false)
+      if (!cancelledRef.current) setLoading(false)
     }
   }, [])
 
-  return { audioUrl, loading, error, load }
+  const cancel = useCallback(() => {
+    cancelledRef.current = true
+    setLoading(false)
+    setError(null)
+  }, [])
+
+  return { audioUrl, loading, error, load, cancel }
 }
