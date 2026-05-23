@@ -17,40 +17,39 @@ jobs:
 
       - name: Validate branch
         run: |
-          BASE_REF="${{ github.event.base_ref }}"
-          if [[ "$BASE_REF" != "refs/heads/main" ]]; then
-            echo "Releases must be tagged from the main branch. Got: $BASE_REF"
+          git fetch origin master
+          if ! git merge-base --is-ancestor ${{github.sha }} origin/master; then
+            echo "Error: Tag must be created from the master branch."
             exit 1
           fi
-  build:
+
+  publish-tauri:
+    permissions:
+      contents: write
     strategy:
       fail-fast: false
       matrix:
         include:
-          - platform: macos-latest
+          - platform: "macos-latest" # for Arm based macs (M1 and above).
             args: "--target aarch64-apple-darwin"
-            rust-target: aarch64-apple-darwin
-          - platform: macos-13
+          - platform: "macos-latest" # for Intel based macs.
             args: "--target x86_64-apple-darwin"
-            rust-target: x86_64-apple-darwin
-          - platform: ubuntu-22.04
+          - platform: "ubuntu-22.04"
             args: ""
-            rust-target: ""
+          - platform: "ubuntu-22.04-arm" # Only available in public repos.
+            args: ""
+          - platform: "windows-latest"
+            args: ""
 
     runs-on: ${{ matrix.platform }}
-
     steps:
       - uses: actions/checkout@v5
 
-      - name: Install system dependencies (Linux)
-        if: matrix.platform == 'ubuntu-22.04'
+      - name: install dependencies (ubuntu only)
+        if: matrix.platform == 'ubuntu-22.04' || matrix.platform == 'ubuntu-22.04-arm' # This must match the platform value defined above.
         run: |
           sudo apt-get update
-          sudo apt-get install -y \
-            libwebkit2gtk-4.1-dev \
-            libappindicator3-dev \
-            librsvg2-dev \
-            patchelf
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
@@ -58,32 +57,27 @@ jobs:
           node-version: 24
           cache: "npm"
 
-      - name: Install Rust stable
-        uses: dtolnay/rust-toolchain@stable
+      - name: install Rust stable
+        uses: dtolnay/rust-toolchain@stable # Set this to dtolnay/rust-toolchain@nightly
         with:
-          targets: ${{ matrix.rust-target }}
+          # Those targets are only used on macos runners so it's in an `if` to slightly speed up windows and linux builds.
+          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
 
-      - name: Cache Rust dependencies
-        uses: Swatinem/rust-cache@v2
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
         with:
-          workspaces: src-tauri
+          workspaces: "./src-tauri -> target"
 
-      - name: Install Node.js dependencies
-        run: npm install --ignore-scripts
+      - name: install frontend dependencies
+        # If you don't have `beforeBuildCommand` configured you may want to build your frontend here too.
+        run: yarn install # change this to npm or pnpm depending on which one you use.
 
-      - name: Install frontend dependencies
-        run: npm install --prefix client
-
-      - name: Download sidecar binaries
-        run: bash scripts/download-binaries.sh
-
-      - name: Build and release
-        uses: tauri-apps/tauri-action@v0
+      - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tagName: ${{ github.ref_name }}
-          releaseName: "Media Fetcher ${{ github.ref_name }}"
+          tagName: app-v__VERSION__ # the action automatically replaces \_\_VERSION\_\_ with the app version.
+          releaseName: "App v__VERSION__"
           releaseBody: "See the assets to download this version and install."
           releaseDraft: true
           prerelease: false
