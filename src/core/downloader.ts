@@ -1,6 +1,7 @@
 import { execFile } from 'child_process'
 import { promisify } from 'util'
 import type { VideoInfo, DownloadOptions } from './types'
+import { isVideoFormat } from './types'
 
 const execFileAsync = promisify(execFile)
 
@@ -26,15 +27,22 @@ export async function downloadAudio(
   options: DownloadOptions,
   onProgress?: (pct: number, stage: string) => void,
 ): Promise<string> {
-  const { url, format, start, end, outputDir } = options
+  const { url, format, resolution, start, end, outputDir } = options
   const os = await import('os')
   const path = await import('path')
 
   const tmpTemplate = path.join(os.tmpdir(), `ytdl_${Date.now()}.%(ext)s`)
   onProgress?.(0, 'downloading')
 
+  const ytFormat = isVideoFormat(format)
+    ? (() => {
+        const height = parseInt((resolution ?? '1080p').replace('p', ''), 10)
+        return `bestvideo[height<=${height}]+bestaudio/best[height<=${height}]`
+      })()
+    : 'bestaudio'
+
   await execFileAsync(YTDLP, [
-    '-f', 'bestaudio',
+    '-f', ytFormat,
     '--no-playlist',
     '--no-warnings',
     '-o', tmpTemplate,
@@ -45,8 +53,7 @@ export async function downloadAudio(
 
   // Find actual downloaded file
   const fs = await import('fs')
-  const prefix = `ytdl_${Date.now()}`
-  const tmpFiles = fs.readdirSync(os.tmpdir()).filter(f => f.startsWith('ytdl_'))
+  const tmpFiles = fs.readdirSync(os.tmpdir()).filter((f: string) => f.startsWith('ytdl_'))
   const rawFile = tmpFiles.length ? path.join(os.tmpdir(), tmpFiles[tmpFiles.length - 1]) : null
   if (!rawFile) throw new Error('Downloaded file not found')
 
@@ -61,14 +68,24 @@ export async function downloadAudio(
   if (start !== undefined) ffmpegArgs.push('-ss', formatTime(start))
   if (end !== undefined) ffmpegArgs.push('-to', formatTime(end))
 
-  const codecMap: Record<string, string[]> = {
-    mp3: ['-acodec', 'libmp3lame', '-q:a', '2'],
-    m4a: ['-acodec', 'aac'],
-    wav: ['-acodec', 'pcm_s16le'],
-    ogg: ['-acodec', 'libvorbis'],
-    flac: ['-acodec', 'flac'],
+  if (isVideoFormat(format)) {
+    if (format === 'mp4') {
+      ffmpegArgs.push('-c:v', 'libx264', '-c:a', 'aac', '-movflags', '+faststart')
+    } else {
+      // webm
+      ffmpegArgs.push('-c:v', 'libvpx-vp9', '-c:a', 'libopus')
+    }
+  } else {
+    const codecMap: Record<string, string[]> = {
+      mp3: ['-acodec', 'libmp3lame', '-q:a', '2'],
+      m4a: ['-acodec', 'aac'],
+      wav: ['-acodec', 'pcm_s16le'],
+      ogg: ['-acodec', 'libvorbis'],
+      flac: ['-acodec', 'flac'],
+    }
+    ffmpegArgs.push(...(codecMap[format] ?? []))
   }
-  ffmpegArgs.push(...(codecMap[format] ?? []), outPath)
+  ffmpegArgs.push(outPath)
 
   await execFileAsync(FFMPEG, ffmpegArgs)
   fs.unlinkSync(rawFile)

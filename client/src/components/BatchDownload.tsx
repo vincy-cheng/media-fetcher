@@ -3,9 +3,11 @@ import { useState, useEffect, useRef } from "react";
 import { BatchUrlInput } from "@/components/BatchUrlInput";
 import { BatchItemRow } from "@/components/BatchItemRow";
 import { FormatSelector } from "@/components/FormatSelector";
+import { ResolutionSelector } from "@/components/ResolutionSelector";
 import { OutputFolder } from "@/components/OutputFolder";
 import { useBatchDownload } from "@/hooks/useBatchDownload";
-import type { AudioFormat, Bitrate } from "@/api/types";
+import type { Format, VideoResolution, Bitrate } from "@/api/types";
+import { isVideoFormat } from "@/api/types";
 
 const PAGE_SIZE = 5;
 const NON_RETRIABLE = new Set([
@@ -16,7 +18,8 @@ const NON_RETRIABLE = new Set([
 ]);
 
 interface BatchDownloadProps {
-  defaultFormat: AudioFormat;
+  defaultFormat: Format;
+  defaultResolution: VideoResolution;
   defaultBitrate: Bitrate;
   defaultOutputDir: string;
   maxDurationSeconds: number | null;
@@ -24,6 +27,7 @@ interface BatchDownloadProps {
 
 export function BatchDownload({
   defaultFormat,
+  defaultResolution,
   defaultBitrate,
   defaultOutputDir,
   maxDurationSeconds,
@@ -38,7 +42,8 @@ export function BatchDownload({
     downloadAll,
     clearAll,
   } = useBatchDownload();
-  const [format, setFormat] = useState<AudioFormat>(defaultFormat);
+  const [format, setFormat] = useState<Format>(defaultFormat);
+  const [resolution, setResolution] = useState<VideoResolution>(defaultResolution);
   const [bitrate] = useState<Bitrate>(defaultBitrate);
   const [outputDir, setOutputDir] = useState(defaultOutputDir);
   const [completedPage, setCompletedPage] = useState(1);
@@ -79,7 +84,7 @@ export function BatchDownload({
 
   const handleDownloadAll = () => {
     if (!canDownload) return;
-    downloadAll(format, bitrate, outputDir, maxDurationSeconds);
+    downloadAll(format, isVideoFormat(format) ? resolution : undefined, bitrate, outputDir, maxDurationSeconds);
   };
 
   return (
@@ -118,6 +123,9 @@ export function BatchDownload({
       )}
 
       <FormatSelector value={format} onChange={setFormat} />
+      {isVideoFormat(format) && (
+        <ResolutionSelector value={resolution} onChange={setResolution} />
+      )}
       <OutputFolder value={outputDir} onChange={setOutputDir} />
 
       <button

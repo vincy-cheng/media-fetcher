@@ -24,11 +24,12 @@ pub async fn cancel_download(
 }
 
 #[tauri::command]
-pub async fn download_audio(
+pub async fn download_media(
     app: AppHandle,
     job_id: String,
     url: String,
     format: String,
+    resolution: Option<String>,
     start: Option<f64>,
     end: Option<f64>,
     output_dir: String,
@@ -72,7 +73,7 @@ pub async fn download_audio(
         job_id: job_id.clone(),
         percent: 0.0,
         stage: "downloading".to_string(),
-        message: "Fetching audio stream…".to_string(),
+        message: "Fetching stream…".to_string(),
     });
 
     // Step 1: download raw audio to temp file
@@ -80,8 +81,15 @@ pub async fn download_audio(
     let tmp_template = tmp_dir.join(format!("ytdl_dl_{job_id}.%(ext)s"));
     let tmp_template_str = tmp_template.to_string_lossy().to_string();
 
+    let yt_format = if is_video_format(&format) {
+        let height = resolution_to_height(resolution.as_deref().unwrap_or("1080p"));
+        format!("bestvideo[height<={height}]+bestaudio/best[height<={height}]")
+    } else {
+        "bestaudio".to_string()
+    };
+
     let mut dl_args = vec![
-        "-f".to_string(), "bestaudio".to_string(),
+        "-f".to_string(), yt_format,
         "--no-playlist".to_string(),
         "--no-warnings".to_string(),
         "-o".to_string(), tmp_template_str,
@@ -177,6 +185,15 @@ pub async fn download_audio(
             "-b:a".to_string(), format!("{lossy_bitrate}k"),
         ]),
         "flac" => ffmpeg_args.extend(["-acodec".to_string(), "flac".to_string()]),
+        "mp4"  => ffmpeg_args.extend([
+            "-c:v".to_string(), "libx264".to_string(),
+            "-c:a".to_string(), "aac".to_string(),
+            "-movflags".to_string(), "+faststart".to_string(),
+        ]),
+        "webm" => ffmpeg_args.extend([
+            "-c:v".to_string(), "libvpx-vp9".to_string(),
+            "-c:a".to_string(), "libopus".to_string(),
+        ]),
         _      => {}
     }
 
@@ -249,6 +266,14 @@ fn sanitize_filename(name: &str) -> String {
         .to_string()
 }
 
+fn is_video_format(format: &str) -> bool {
+    format == "mp4" || format == "webm"
+}
+
+fn resolution_to_height(resolution: &str) -> u32 {
+    resolution.trim_end_matches('p').parse().unwrap_or(1080)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -273,5 +298,22 @@ mod tests {
     fn sanitize_filename_replaces_special_chars() {
         assert_eq!(sanitize_filename("Hello: World!"), "Hello_ World_");
         assert_eq!(sanitize_filename("  trim  "), "trim");
+    }
+
+    #[test]
+    fn is_video_format_identifies_mp4_and_webm() {
+        assert!(is_video_format("mp4"));
+        assert!(is_video_format("webm"));
+        assert!(!is_video_format("mp3"));
+        assert!(!is_video_format("m4a"));
+        assert!(!is_video_format("flac"));
+    }
+
+    #[test]
+    fn resolution_to_height_parses_common_values() {
+        assert_eq!(resolution_to_height("720p"), 720);
+        assert_eq!(resolution_to_height("1080p"), 1080);
+        assert_eq!(resolution_to_height("2160p"), 2160);
+        assert_eq!(resolution_to_height("bad"), 1080); // fallback
     }
 }

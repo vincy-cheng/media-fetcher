@@ -1,6 +1,6 @@
 // client/src/hooks/useDownloadJob.ts
 import { useState, useCallback, useEffect } from 'react'
-import { downloadAudio, cancelDownload, onDownloadProgress, onDownloadComplete } from '@/api/client'
+import { downloadMedia, cancelDownload, onDownloadProgress, onDownloadComplete } from '@/api/client'
 import type { DownloadOptions, JobProgress } from '@/api/types'
 
 export interface Job {
@@ -58,7 +58,7 @@ export function useDownloadJob() {
     }
     setJobs((prev) => [...prev, newJob])
     try {
-      await downloadAudio({ ...options, jobId: id })
+      await downloadMedia({ ...options, jobId: id })
     } catch (e) {
       const msg = String(e)
       setJobs((prev) => {

@@ -11,11 +11,12 @@ export async function extractPreviewAudio(url: string): Promise<string> {
   return invoke<string>('extract_preview_audio', { url })
 }
 
-export async function downloadAudio(options: DownloadOptions): Promise<string> {
-  return invoke<string>('download_audio', {
+export async function downloadMedia(options: DownloadOptions): Promise<string> {
+  return invoke<string>('download_media', {
     jobId: options.jobId,
     url: options.url,
     format: options.format,
+    resolution: options.resolution ?? null,
     start: options.start ?? null,
     end: options.end ?? null,
     outputDir: options.outputDir,

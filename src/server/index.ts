@@ -20,7 +20,7 @@ app.get('/api/info', async (req, res) => {
 })
 
 app.post('/api/download', async (req, res) => {
-  const { url, format, start, end, outputDir } = req.body
+  const { url, format, resolution, start, end, outputDir } = req.body
   if (!url || !format || !outputDir) {
     return res.status(400).json({ error: 'url, format, and outputDir are required' })
   }
@@ -32,7 +32,7 @@ app.post('/api/download', async (req, res) => {
   const send = (data: object) => res.write(`data: ${JSON.stringify(data)}\n\n`)
 
   try {
-    const out = await downloadAudio({ url, format, start, end, outputDir }, (percent, stage) => {
+    const out = await downloadAudio({ url, format, resolution, start, end, outputDir }, (percent, stage) => {
       send({ percent, stage, message: `${stage} ${percent}%` })
     })
     send({ percent: 100, stage: 'complete', message: `Saved: ${out}`, outputPath: out })

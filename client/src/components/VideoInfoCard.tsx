@@ -16,6 +16,7 @@ interface VideoInfoCardProps {
   onCancelPreview?: () => void;
   previewLoading?: boolean;
   previewDisabled?: boolean;
+  hidePreview?: boolean;
 }
 
 export function VideoInfoCard({
@@ -24,6 +25,7 @@ export function VideoInfoCard({
   onCancelPreview,
   previewLoading,
   previewDisabled,
+  hidePreview,
 }: VideoInfoCardProps) {
   return (
     <div className="flex gap-4 rounded-lg border border-primary-200 bg-primary-50 p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
@@ -47,7 +49,7 @@ export function VideoInfoCard({
           <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600 dark:bg-gray-700 dark:text-gray-300">
             {formatDuration(info.duration)}
           </span>
-          {onPreview && (
+          {onPreview && !hidePreview && (
             previewLoading ? (
               <button
                 onClick={onCancelPreview}

@@ -7,15 +7,22 @@ export interface VideoInfo {
   url: string
 }
 
+export type Format = 'mp3' | 'm4a' | 'wav' | 'ogg' | 'flac' | 'mp4' | 'webm'
+
+export type VideoResolution = '360p' | '480p' | '720p' | '1080p' | '1440p' | '2160p'
+
+export function isVideoFormat(f: Format): boolean {
+  return f === 'mp4' || f === 'webm'
+}
+
 export interface DownloadOptions {
   url: string
-  format: AudioFormat
+  format: Format
+  resolution?: VideoResolution
   start?: number
   end?: number
   outputDir: string
 }
-
-export type AudioFormat = 'mp3' | 'm4a' | 'wav' | 'ogg' | 'flac'
 
 export interface JobProgress {
   percent: number

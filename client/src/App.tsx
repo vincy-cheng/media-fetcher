@@ -17,8 +17,9 @@ import { useDarkMode } from "@/hooks/useDarkMode";
 import { useSettings } from "@/hooks/useSettings";
 import { useToolStatus } from "@/hooks/useToolStatus";
 import { ToolStatusBanner } from "@/components/ToolStatusBanner";
-import type { AudioFormat, Bitrate } from "@/api/types";
-import { ABSOLUTE_MAX_DURATION_SECONDS } from "@/api/types";
+import type { Format, VideoResolution, Bitrate } from "@/api/types";
+import { ABSOLUTE_MAX_DURATION_SECONDS, isVideoFormat } from "@/api/types";
+import { ResolutionSelector } from "@/components/ResolutionSelector";
 import { GearIcon, SunIcon, MoonIcon } from "@radix-ui/react-icons";
 
 type Tab = "single" | "batch";
@@ -43,7 +44,8 @@ export default function App() {
   const toolStatusState = useToolStatus();
 
   const [activeTab, setActiveTab] = useState<Tab>("single");
-  const [format, setFormat] = useState<AudioFormat>("m4a");
+  const [format, setFormat] = useState<Format>("m4a");
+  const [resolution, setResolution] = useState<VideoResolution>("1080p");
   const [outputDir, setOutputDir] = useState("");
   const [bitrate, setBitrate] = useState<Bitrate>(192);
   const [trimStart, setTrimStart] = useState(0);
@@ -59,6 +61,7 @@ export default function App() {
     setFormat(prefs.defaultFormat);
     if (prefs.defaultOutputDir) setOutputDir(prefs.defaultOutputDir);
     setBitrate(prefs.defaultBitrate);
+    if (prefs.defaultResolution) setResolution(prefs.defaultResolution);
   }, [loaded, settings]);
 
   const handleTrimChange = (s: number, e: number) => {
@@ -90,6 +93,7 @@ export default function App() {
     await startDownload({
       url: info.url,
       format,
+      resolution: isVideoFormat(format) ? resolution : undefined,
       start: trimStart > 0 ? trimStart : undefined,
       end: trimEnd < info.duration && trimEnd > 0 ? trimEnd : undefined,
       outputDir,
@@ -107,7 +111,7 @@ export default function App() {
               YouTube Audio Downloader
             </h1>
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              Download audio in mp3, m4a, wav, ogg, or flac
+              Download audio or video in multiple formats
             </p>
           </div>
           <div className="flex gap-2">
@@ -216,6 +220,7 @@ export default function App() {
               onCancelPreview={cancelPreview}
               previewLoading={previewLoading}
               previewDisabled={infoLoading}
+              hidePreview={isVideoFormat(format)}
             />
           )}
 
@@ -228,7 +233,7 @@ export default function App() {
             </p>
           )}
 
-          {audioUrl && info && (
+          {audioUrl && info && !isVideoFormat(format) && (
             <div className="space-y-3 rounded-lg border border-primary-200 bg-primary-50 p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
               <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
                 Preview & Trim
@@ -252,6 +257,9 @@ export default function App() {
           {info && (
             <div className="space-y-4 rounded-lg border border-primary-200 bg-primary-50 p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
               <FormatSelector value={format} onChange={setFormat} />
+              {isVideoFormat(format) && (
+                <ResolutionSelector value={resolution} onChange={setResolution} />
+              )}
               <OutputFolder value={outputDir} onChange={setOutputDir} />
               {durationError && (
                 <p
@@ -267,7 +275,7 @@ export default function App() {
                 disabled={!outputDir}
                 className="w-full cursor-pointer rounded-md bg-primary-600 py-2 text-sm font-semibold text-white hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                Download {format.toUpperCase()}
+                Download {isVideoFormat(format) ? `${format.toUpperCase()} (${resolution})` : format.toUpperCase()}
               </button>
             </div>
           )}
@@ -283,6 +291,7 @@ export default function App() {
         >
           <BatchDownload
             defaultFormat={format}
+            defaultResolution={resolution}
             defaultBitrate={bitrate}
             defaultOutputDir={outputDir}
             maxDurationSeconds={settings.downloadPreferences.maxDurationSeconds}

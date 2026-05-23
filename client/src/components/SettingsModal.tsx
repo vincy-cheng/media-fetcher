@@ -3,13 +3,15 @@ import { open } from "@tauri-apps/plugin-dialog";
 import { Cross2Icon } from "@radix-ui/react-icons";
 import type {
   AppSettings,
-  AudioFormat,
+  Format,
+  VideoResolution,
   Bitrate,
   ToolsStatus,
   UpdateProgress,
 } from "@/api/types";
+import { isVideoFormat } from "@/api/types";
 
-const FORMATS: { value: AudioFormat; label: string }[] = [
+const AUDIO_FORMATS: { value: Format; label: string }[] = [
   { value: "mp3", label: "MP3" },
   { value: "m4a", label: "M4A" },
   { value: "wav", label: "WAV" },
@@ -17,9 +19,16 @@ const FORMATS: { value: AudioFormat; label: string }[] = [
   { value: "flac", label: "FLAC" },
 ];
 
+const VIDEO_FORMATS: { value: Format; label: string }[] = [
+  { value: "mp4", label: "MP4" },
+  { value: "webm", label: "WebM" },
+];
+
 const BITRATES: Bitrate[] = [128, 192, 256, 320];
 
-const LOSSLESS: AudioFormat[] = ["wav", "flac"];
+const LOSSLESS_AUDIO: Format[] = ["wav", "flac"];
+
+const RESOLUTIONS: VideoResolution[] = ['360p', '480p', '720p', '1080p', '1440p', '2160p'];
 
 interface SettingsModalProps {
   settings: AppSettings;
@@ -57,7 +66,8 @@ export function SettingsModal({
 }: SettingsModalProps) {
   const prefs = settings.downloadPreferences;
   const [activeTab, setActiveTab] = useState<SettingsTab>("preferences");
-  const [format, setFormat] = useState<AudioFormat>(prefs.defaultFormat);
+  const [format, setFormat] = useState<Format>(prefs.defaultFormat);
+  const [resolution, setResolution] = useState<VideoResolution>(prefs.defaultResolution ?? '1080p');
   const [outputDir, setOutputDir] = useState(prefs.defaultOutputDir);
   const [bitrate, setBitrate] = useState<Bitrate>(prefs.defaultBitrate);
   const [saving, setSaving] = useState(false);
@@ -70,7 +80,8 @@ export function SettingsModal({
       : ""
   );
 
-  const isLossless = LOSSLESS.includes(format);
+  const isVideo = isVideoFormat(format);
+  const isLossless = !isVideo && LOSSLESS_AUDIO.includes(format);
 
   const handleBrowse = async () => {
     setPicking(true);
@@ -92,6 +103,7 @@ export function SettingsModal({
         ...settings,
         downloadPreferences: {
           defaultFormat: format,
+          defaultResolution: resolution,
           defaultOutputDir: outputDir,
           defaultBitrate: bitrate,
           maxDurationSeconds:
@@ -164,8 +176,9 @@ export function SettingsModal({
                 <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                   Default Format
                 </label>
+                <p className="text-xs text-gray-400 dark:text-gray-500">Audio</p>
                 <div className="flex gap-2 flex-wrap">
-                  {FORMATS.map((f) => (
+                  {AUDIO_FORMATS.map((f) => (
                     <button
                       key={f.value}
                       type="button"
@@ -180,6 +193,46 @@ export function SettingsModal({
                     </button>
                   ))}
                 </div>
+                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Video</p>
+                <div className="flex gap-2 flex-wrap">
+                  {VIDEO_FORMATS.map((f) => (
+                    <button
+                      key={f.value}
+                      type="button"
+                      onClick={() => setFormat(f.value)}
+                      className={`cursor-pointer rounded-md border px-3 py-1.5 text-sm font-medium transition-colors ${
+                        format === f.value
+                          ? "border-primary-800 bg-primary-600 text-white"
+                          : "border-primary-200 bg-primary-50 text-gray-700 hover:bg-primary-100 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+                      }`}
+                    >
+                      {f.label}
+                    </button>
+                  ))}
+                </div>
+                {isVideo && (
+                  <div className="mt-2">
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Default Resolution
+                    </label>
+                    <div className="mt-1 flex gap-2 flex-wrap">
+                      {RESOLUTIONS.map((r) => (
+                        <button
+                          key={r}
+                          type="button"
+                          onClick={() => setResolution(r)}
+                          className={`cursor-pointer rounded-md border px-3 py-1.5 text-sm font-medium transition-colors ${
+                            resolution === r
+                              ? "border-primary-800 bg-primary-600 text-white"
+                              : "border-primary-200 bg-primary-50 text-gray-700 hover:bg-primary-100 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+                          }`}
+                        >
+                          {r}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Default Output Folder */}
@@ -210,8 +263,8 @@ export function SettingsModal({
                 </div>
               </div>
 
-              {/* Default Bitrate (lossy formats only) */}
-              {!isLossless && (
+              {/* Default Bitrate (lossy audio formats only) */}
+              {!isVideo && !isLossless && (
                 <div className="flex flex-col gap-1.5">
                   <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                     Default Bitrate

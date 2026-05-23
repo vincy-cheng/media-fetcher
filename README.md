@@ -1,6 +1,6 @@
 # YouTube Audio Downloader
 
-Download audio from YouTube in multiple formats with a native desktop app, web UI, or CLI.
+Download audio or video from YouTube in multiple formats with a native desktop app, web UI, or CLI.
 
 Built with **Tauri 2** (Rust backend) + **React + Vite** (frontend).
 
@@ -9,6 +9,7 @@ Built with **Tauri 2** (Rust backend) + **React + Vite** (frontend).
 ## Features
 
 - 🎵 Download audio as **mp3, m4a, wav, ogg, or flac**
+- 🎬 Download video as **mp4 or webm** with selectable resolution (360p–2160p)
 - 📦 **Batch download** — queue up to 20 URLs, downloads 3 at a time
 - ✂️ **Visual waveform trim** — drag region handles or type start/end times
 - 👁 **Audio preview** — WaveSurfer.js waveform before downloading
@@ -61,7 +62,8 @@ npm run cli
 
 | Flag | Description |
 |---|---|
-| `-f, --format` | `mp3` \| `m4a` \| `wav` \| `ogg` \| `flac` (default: prompted) |
+| `-f, --format` | `mp3` \| `m4a` \| `wav` \| `ogg` \| `flac` \| `mp4` \| `webm` (default: prompted) |
+| `-r, --resolution` | `360p` \| `480p` \| `720p` \| `1080p` \| `1440p` \| `2160p` — video only (default: `1080p`) |
 | `-s, --start` | Trim start time `HH:MM:SS` or `MM:SS` |
 | `-e, --end` | Trim end time `HH:MM:SS` or `MM:SS` |
 | `-o, --output` | Output directory path (default: prompted) |

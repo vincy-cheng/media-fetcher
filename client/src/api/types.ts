@@ -9,18 +9,25 @@ export interface VideoInfo {
   url: string
 }
 
-export type AudioFormat = 'mp3' | 'm4a' | 'wav' | 'ogg' | 'flac'
+export type Format = 'mp3' | 'm4a' | 'wav' | 'ogg' | 'flac' | 'mp4' | 'webm'
+
+export type VideoResolution = '360p' | '480p' | '720p' | '1080p' | '1440p' | '2160p'
+
+export function isVideoFormat(f: Format): boolean {
+  return f === 'mp4' || f === 'webm'
+}
 
 export type Bitrate = 128 | 192 | 256 | 320
 
 export interface DownloadOptions {
   url: string
-  format: AudioFormat
+  format: Format
+  resolution?: VideoResolution
   start?: number
   end?: number
   outputDir: string
   bitrate?: Bitrate
-  /** UUID matching the job_id passed to the Rust download_audio command. */
+  /** UUID matching the job_id passed to the Rust download_media command. */
   jobId: string
   /** Video duration in seconds, used for the backend hard-ceiling check. */
   duration?: number
@@ -46,7 +53,8 @@ export interface CookieConfig {
 }
 
 export interface DownloadPreferences {
-  defaultFormat: AudioFormat
+  defaultFormat: Format
+  defaultResolution: VideoResolution
   defaultOutputDir: string
   defaultBitrate: Bitrate
   /** User-configured max duration in seconds. null = use the 3-hour absolute ceiling. */

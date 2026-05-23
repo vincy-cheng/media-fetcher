@@ -4,6 +4,7 @@ import type { AppSettings, DownloadPreferences } from '@/api/types'
 
 const DEFAULT_PREFERENCES: DownloadPreferences = {
   defaultFormat: 'm4a',
+  defaultResolution: '1080p',
   defaultOutputDir: '',
   defaultBitrate: 192,
   maxDurationSeconds: null,

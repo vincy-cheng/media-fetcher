@@ -4,7 +4,7 @@ mod utils;
 use std::collections::HashMap;
 use std::sync::Mutex;
 use commands::{
-    download::{download_audio, cancel_download},
+    download::{download_media, cancel_download},
     info::get_video_info,
     preview::extract_preview_audio,
     settings::{get_settings, save_settings},
@@ -22,7 +22,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             get_video_info,
             extract_preview_audio,
-            download_audio,
+            download_media,
             cancel_download,
             get_settings,
             save_settings,

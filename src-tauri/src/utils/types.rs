@@ -18,10 +18,16 @@ impl Default for CookieConfig {
     }
 }
 
+fn default_resolution_value() -> String {
+    "1080p".to_string()
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct DownloadPreferences {
     pub default_format: String,
+    #[serde(default = "default_resolution_value")]
+    pub default_resolution: String,
     pub default_output_dir: String,
     pub default_bitrate: u16,
     /// User-configurable max duration in seconds. None means use the absolute 3-hour ceiling.
@@ -33,6 +39,7 @@ impl Default for DownloadPreferences {
     fn default() -> Self {
         Self {
             default_format: "m4a".to_string(),
+            default_resolution: "1080p".to_string(),
             default_output_dir: String::new(),
             default_bitrate: 192,
             max_duration_seconds: None,

@@ -1,7 +1,7 @@
 // client/src/hooks/useBatchDownload.ts
 import { useState, useCallback, useEffect, useRef } from 'react'
-import { getVideoInfo, downloadAudio, cancelDownload, onDownloadProgress, onDownloadComplete } from '@/api/client'
-import type { VideoInfo, AudioFormat, Bitrate, JobProgress } from '@/api/types'
+import { getVideoInfo, downloadMedia, cancelDownload, onDownloadProgress, onDownloadComplete } from '@/api/client'
+import type { VideoInfo, Format, VideoResolution, Bitrate, JobProgress } from '@/api/types'
 import { ABSOLUTE_MAX_DURATION_SECONDS } from '@/api/types'
 import type { UnlistenFn } from '@tauri-apps/api/event'
 
@@ -144,7 +144,7 @@ export function useBatchDownload() {
   }, [])
 
   const downloadAll = useCallback(
-    async (format: AudioFormat, bitrate: Bitrate, outputDir: string, maxDurationSeconds: number | null) => {
+    async (format: Format, resolution: VideoResolution | undefined, bitrate: Bitrate, outputDir: string, maxDurationSeconds: number | null) => {
       const effectiveMax = maxDurationSeconds ?? ABSOLUTE_MAX_DURATION_SECONDS
       setDownloading(true)
       try {
@@ -180,10 +180,11 @@ export function useBatchDownload() {
 
         await runWithConcurrency(
           eligible.map((item) => () =>
-            downloadAudio({
+            downloadMedia({
               jobId: item.id,
               url: item.url,
               format,
+              resolution,
               bitrate,
               outputDir,
               duration: item.info?.duration,
