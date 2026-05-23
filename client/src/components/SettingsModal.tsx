@@ -164,10 +164,10 @@ export function SettingsModal({
               role="tab"
               aria-selected={activeTab === tab}
               onClick={() => setActiveTab(tab)}
-              className={`flex-1 rounded-md py-1.5 text-sm font-medium transition-colors ${
+              className={`flex-1 rounded-md py-1.5 text-sm font-medium transition-colors hover:cursor-pointer ${
                 activeTab === tab
                   ? "bg-primary-600 text-white shadow-sm"
-                  : "text-gray-600 hover:bg-primary-100 dark:text-gray-300 dark:hover:bg-gray-700"
+                  : "text-gray-600 hover:bg-primary-200 dark:text-gray-300 dark:hover:bg-gray-700"
               }`}
             >
               {tab === "preferences" ? "Preferences" : "Tools"}
@@ -269,7 +269,7 @@ export function SettingsModal({
                     type="button"
                     onClick={handleBrowse}
                     disabled={picking}
-                    className="cursor-pointer rounded-md border border-primary-200 bg-primary-300 px-3 py-2 text-sm text-primary-800 hover:bg-primary-400 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+                    className="cursor-pointer rounded-md bg-primary-600 px-3 py-2 text-sm text-white hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
                   >
                     Browse
                   </button>
@@ -321,7 +321,7 @@ export function SettingsModal({
                     value={maxDurationMinutes}
                     onChange={(e) => setMaxDurationMinutes(e.target.value)}
                     placeholder="No limit (3h max)"
-                    className="w-32 rounded-md border border-primary-200 bg-primary-50 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
+                    className="w-40 rounded-md border border-primary-200 bg-primary-50 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
                   />
                   <span className="text-sm text-gray-500 dark:text-gray-400">
                     minutes

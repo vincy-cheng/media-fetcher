@@ -38,7 +38,13 @@ export default function App() {
     load: loadPreview,
     cancel: cancelPreview,
   } = usePreview();
-  const { jobs, history, start: startDownload, cancel: cancelDownload, clear } = useDownloadJob();
+  const {
+    jobs,
+    history,
+    start: startDownload,
+    cancel: cancelDownload,
+    clear,
+  } = useDownloadJob();
   const { dark, toggle: toggleDark } = useDarkMode();
   const { settings, loaded, save: saveSettings } = useSettings();
   const toolStatusState = useToolStatus();
@@ -85,7 +91,7 @@ export default function App() {
     if (info.duration > 0 && info.duration > maxSec) {
       const maxMin = Math.round(maxSec / 60);
       setDurationError(
-        `This video is too long (limit: ${maxMin} min). Adjust the limit in Settings.`
+        `This video is too long (limit: ${maxMin} min). Adjust the limit in Settings.`,
       );
       return;
     }
@@ -170,7 +176,7 @@ export default function App() {
               role="tab"
               aria-selected={activeTab === tab}
               aria-controls={`tabpanel-${tab}`}
-              className={`flex-1 rounded-md py-1.5 text-sm font-medium transition-colors ${
+              className={`flex-1 rounded-md py-1.5 text-sm font-medium transition-colors hover:cursor-pointer ${
                 activeTab === tab
                   ? "bg-primary-600 text-white"
                   : "text-gray-600 hover:bg-primary-100 dark:text-gray-300 dark:hover:bg-gray-700"
@@ -258,7 +264,10 @@ export default function App() {
             <div className="space-y-4 rounded-lg border border-primary-200 bg-primary-50 p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
               <FormatSelector value={format} onChange={setFormat} />
               {isVideoFormat(format) && (
-                <ResolutionSelector value={resolution} onChange={setResolution} />
+                <ResolutionSelector
+                  value={resolution}
+                  onChange={setResolution}
+                />
               )}
               <OutputFolder value={outputDir} onChange={setOutputDir} />
               {durationError && (
@@ -275,12 +284,20 @@ export default function App() {
                 disabled={!outputDir}
                 className="w-full cursor-pointer rounded-md bg-primary-600 py-2 text-sm font-semibold text-white hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                Download {isVideoFormat(format) ? `${format.toUpperCase()} (${resolution})` : format.toUpperCase()}
+                Download{" "}
+                {isVideoFormat(format)
+                  ? `${format.toUpperCase()} (${resolution})`
+                  : format.toUpperCase()}
               </button>
             </div>
           )}
 
-          <JobQueue jobs={jobs} history={history} onClear={clear} onCancel={cancelDownload} />
+          <JobQueue
+            jobs={jobs}
+            history={history}
+            onClear={clear}
+            onCancel={cancelDownload}
+          />
         </div>
 
         <div

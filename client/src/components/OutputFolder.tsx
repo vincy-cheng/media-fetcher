@@ -38,7 +38,7 @@ export function OutputFolder({ value, onChange }: OutputFolderProps) {
           type="button"
           onClick={handlePick}
           disabled={picking}
-          className="cursor-pointer rounded-md border text-primary-800 border-primary-200 bg-primary-300 px-3 py-2 text-sm hover:bg-primary-400 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+          className="cursor-pointer rounded-md text-white bg-primary-600 px-3 py-2 text-sm hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
         >
           Browse
         </button>
