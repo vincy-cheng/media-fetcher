@@ -69,15 +69,18 @@ else
     if [[ "$TRIPLE" == x86_64-* && "$HOST_ARCH" == "arm64" ]]; then
       # Cross-compiling: ARM host → x86_64 target (e.g. macos-latest CI building Intel)
       INTEL_BREW="/usr/local/bin/brew"
-      echo "  Cross-compiling: installing ffmpeg via Intel Homebrew (Rosetta 2)"
-      echo "  Host triple:   aarch64-apple-darwin"
-      if [[ ! -x "$INTEL_BREW" ]]; then
-        echo "  ERROR: Intel Homebrew not found at $INTEL_BREW." >&2
-        echo "  Install it with: arch -x86_64 /bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\"" >&2
-        exit 1
+      if [[ -x "$INTEL_BREW" ]]; then
+        echo "  Cross-compiling: installing ffmpeg via Intel Homebrew (Rosetta 2)"
+        arch -x86_64 "$INTEL_BREW" install --quiet ffmpeg
+        FFMPEG_SRC="/usr/local/opt/ffmpeg/bin/ffmpeg"
+      else
+        echo "  Cross-compiling: Intel Homebrew not found, downloading static x86_64 ffmpeg"
+        FFMPEG_ZIP="$BINARIES_DIR/ffmpeg-x86_64.zip"
+        curl -fL --progress-bar -o "$FFMPEG_ZIP" "https://evermeet.cx/ffmpeg/getrelease/ffmpeg/zip"
+        unzip -o "$FFMPEG_ZIP" -d "$BINARIES_DIR" ffmpeg
+        FFMPEG_SRC="$BINARIES_DIR/ffmpeg"
+        rm -f "$FFMPEG_ZIP"
       fi
-      arch -x86_64 "$INTEL_BREW" install --quiet ffmpeg
-      FFMPEG_SRC="/usr/local/opt/ffmpeg/bin/ffmpeg"
     else
       brew install --quiet ffmpeg 2>/dev/null || true
       FFMPEG_SRC="$(brew --prefix ffmpeg)/bin/ffmpeg"
