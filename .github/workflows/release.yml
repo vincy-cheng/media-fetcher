@@ -77,6 +77,14 @@ jobs:
           npm install
           npm install --prefix client
 
+      - name: Download sidecar binaries for build target
+        shell: bash
+        run: |
+          if [[ "${{ matrix.args }}" == *"--target"* ]]; then
+            TARGET_TRIPLE=$(echo "${{ matrix.args }}" | sed 's/.*--target[[:space:]]*//')
+            bash scripts/download-binaries.sh "$TARGET_TRIPLE"
+          fi
+
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
