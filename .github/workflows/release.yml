@@ -17,8 +17,9 @@ jobs:
 
       - name: Validate branch
         run: |
-          if [[ "${GITHUB_REF_NAME}" != "main" ]]; then
-            echo "This workflow only runs on the main branch."
+          BASE_REF="${{ github.event.base_ref }}"
+          if [[ "$BASE_REF" != "refs/heads/main" ]]; then
+            echo "Releases must be tagged from the main branch. Got: $BASE_REF"
             exit 1
           fi
   build:
