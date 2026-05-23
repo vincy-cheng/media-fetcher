@@ -53,7 +53,7 @@ if [ -f "$FFMPEG_DEST" ]; then
   echo "  ffmpeg already exists, skipping."
 else
   if [[ "$TRIPLE" == *apple-darwin* ]]; then
-    brew_ensure ffmpeg
+    brew install --quiet ffmpeg 2>/dev/null || true
     FFMPEG_SRC="$(brew --prefix ffmpeg)/bin/ffmpeg"
     cp "$FFMPEG_SRC" "$FFMPEG_DEST"
     chmod 755 "$FFMPEG_DEST"
