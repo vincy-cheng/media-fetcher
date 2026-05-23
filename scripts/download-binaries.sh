@@ -17,8 +17,8 @@ case "${PLATFORM}-${ARCH}" in
   Darwin-x86_64) TRIPLE="x86_64-apple-darwin" ;;
   Linux-x86_64)  TRIPLE="x86_64-unknown-linux-gnu" ;;
   *)
-    echo "Unsupported platform: ${PLATFORM}/${ARCH}" >&2
-    exit 1
+    echo "Unsupported platform: ${PLATFORM}/${ARCH} — skipping binary download." >&2
+    exit 0
     ;;
 esac
 

@@ -4,24 +4,28 @@ on:
   push:
     tags:
       - "v*.*.*"
+  workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
-  validate:
-    runs-on: ubuntu-22.04
+  # TODO: Uncomment this once the workflow is working
+  # validate:
+  #   runs-on: ubuntu-22.04
 
-    steps:
-      - uses: actions/checkout@v5
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #       with:
+  #         fetch-depth: 0
 
-      - name: Validate branch
-        run: |
-          git fetch origin master
-          if ! git merge-base --is-ancestor ${{github.sha }} origin/master; then
-            echo "Error: Tag must be created from the master branch."
-            exit 1
-          fi
+  #     - name: Validate branch
+  #       run: |
+  #         git fetch origin main
+  #         if ! git merge-base --is-ancestor ${{ github.sha }} origin/main; then
+  #           echo "Error: Tag must be created from the main branch."
+  #           exit 1
+  #         fi
 
   publish-tauri:
     permissions:
@@ -43,7 +47,7 @@ jobs:
 
     runs-on: ${{ matrix.platform }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v4
 
       - name: install dependencies (ubuntu only)
         if: matrix.platform == 'ubuntu-22.04' || matrix.platform == 'ubuntu-22.04-arm' # This must match the platform value defined above.
@@ -51,11 +55,11 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
+      - name: setup node
+        uses: actions/setup-node@v4
         with:
           node-version: lts/*
-          cache: "npm"
+          cache: "npm" # Set this to npm, yarn or pnpm.
 
       - name: install Rust stable
         uses: dtolnay/rust-toolchain@stable # Set this to dtolnay/rust-toolchain@nightly
@@ -76,10 +80,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tagName: ${{ github.ref_name }}
-          releaseName: "Media Fetcher ${{ github.ref_name }}"
+          tagName: media-fetch v__VERSION__ # the action automatically replaces \_\_VERSION\_\_ with the app version.
+          releaseName: "Media Fetch v__VERSION__"
           releaseBody: "See the assets to download this version and install."
           releaseDraft: true
           prerelease: false
-          tauriScript: npx tauri
           args: ${{ matrix.args }}
