@@ -4,28 +4,26 @@ on:
   push:
     tags:
       - "v*.*.*"
-  workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
-  # TODO: Uncomment this once the workflow is working
-  # validate:
-  #   runs-on: ubuntu-22.04
+  validate:
+    runs-on: ubuntu-latest
 
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #       with:
-  #         fetch-depth: 0
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-  #     - name: Validate branch
-  #       run: |
-  #         git fetch origin main
-  #         if ! git merge-base --is-ancestor ${{ github.sha }} origin/main; then
-  #           echo "Error: Tag must be created from the main branch."
-  #           exit 1
-  #         fi
+      - name: Validate branch
+        run: |
+          git fetch origin main
+          if ! git merge-base --is-ancestor ${{ github.sha }} origin/main; then
+            echo "Error: Tag must be created from the main branch."
+            exit 1
+          fi
 
   publish-tauri:
     permissions:
@@ -38,10 +36,10 @@ jobs:
             args: "--target aarch64-apple-darwin"
           - platform: "macos-latest" # Intel Macs
             args: "--target x86_64-apple-darwin"
-          # - platform: "ubuntu-22.04"
-          #   args: ""
-          # - platform: "ubuntu-22.04-arm" # Only available in public repos.
-          #   args: ""
+          - platform: "ubuntu-22.04"
+            args: ""
+          - platform: "ubuntu-22.04-arm" # Only available in public repos.
+            args: ""
 
     runs-on: ${{ matrix.platform }}
     steps:
@@ -88,7 +86,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tagName: media-fetcher-v__VERSION__
-          releaseName: "Media Fetch v__VERSION__"
+          releaseName: "Media Fetch-v__VERSION__"
           releaseBody: "See the assets to download this version and install."
           releaseDraft: true
           prerelease: false

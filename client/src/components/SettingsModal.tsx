@@ -28,7 +28,14 @@ const BITRATES: Bitrate[] = [128, 192, 256, 320];
 
 const LOSSLESS_AUDIO: Format[] = ["wav", "flac"];
 
-const RESOLUTIONS: VideoResolution[] = ['360p', '480p', '720p', '1080p', '1440p', '2160p'];
+const RESOLUTIONS: VideoResolution[] = [
+  "360p",
+  "480p",
+  "720p",
+  "1080p",
+  "1440p",
+  "2160p",
+];
 
 interface SettingsModalProps {
   settings: AppSettings;
@@ -67,7 +74,9 @@ export function SettingsModal({
   const prefs = settings.downloadPreferences;
   const [activeTab, setActiveTab] = useState<SettingsTab>("preferences");
   const [format, setFormat] = useState<Format>(prefs.defaultFormat);
-  const [resolution, setResolution] = useState<VideoResolution>(prefs.defaultResolution ?? '1080p');
+  const [resolution, setResolution] = useState<VideoResolution>(
+    prefs.defaultResolution ?? "1080p",
+  );
   const [outputDir, setOutputDir] = useState(prefs.defaultOutputDir);
   const [bitrate, setBitrate] = useState<Bitrate>(prefs.defaultBitrate);
   const [saving, setSaving] = useState(false);
@@ -77,7 +86,7 @@ export function SettingsModal({
   const [maxDurationMinutes, setMaxDurationMinutes] = useState<string>(
     prefs.maxDurationSeconds != null
       ? String(Math.round(prefs.maxDurationSeconds / 60))
-      : ""
+      : "",
   );
 
   const isVideo = isVideoFormat(format);
@@ -158,7 +167,7 @@ export function SettingsModal({
               className={`flex-1 rounded-md py-1.5 text-sm font-medium transition-colors ${
                 activeTab === tab
                   ? "bg-primary-600 text-white shadow-sm"
-                  : "text-gray-600 hover:bg-primary-100 dark:text-gray-400 dark:hover:text-gray-200"
+                  : "text-gray-600 hover:bg-primary-100 dark:text-gray-300 dark:hover:bg-gray-700"
               }`}
             >
               {tab === "preferences" ? "Preferences" : "Tools"}
@@ -176,7 +185,9 @@ export function SettingsModal({
                 <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                   Default Format
                 </label>
-                <p className="text-xs text-gray-400 dark:text-gray-500">Audio</p>
+                <p className="text-xs text-gray-400 dark:text-gray-500">
+                  Audio
+                </p>
                 <div className="flex gap-2 flex-wrap">
                   {AUDIO_FORMATS.map((f) => (
                     <button
@@ -193,7 +204,9 @@ export function SettingsModal({
                     </button>
                   ))}
                 </div>
-                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Video</p>
+                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                  Video
+                </p>
                 <div className="flex gap-2 flex-wrap">
                   {VIDEO_FORMATS.map((f) => (
                     <button
