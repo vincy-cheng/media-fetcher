@@ -65,8 +65,27 @@ if [ -f "$FFMPEG_DEST" ]; then
   echo "  ffmpeg already exists, skipping."
 else
   if [[ "$TRIPLE" == *apple-darwin* ]]; then
-    brew install --quiet ffmpeg 2>/dev/null || true
-    FFMPEG_SRC="$(brew --prefix ffmpeg)/bin/ffmpeg"
+    HOST_ARCH="$(uname -m)"
+    if [[ "$TRIPLE" == x86_64-* && "$HOST_ARCH" == "arm64" ]]; then
+      # Cross-compiling: ARM host → x86_64 target (e.g. macos-latest CI building Intel)
+      INTEL_BREW="/usr/local/bin/brew"
+      echo "  Cross-compiling: installing ffmpeg via Intel Homebrew (Rosetta 2)"
+      echo "  Host triple:   aarch64-apple-darwin"
+      if [[ ! -x "$INTEL_BREW" ]]; then
+        echo "  ERROR: Intel Homebrew not found at $INTEL_BREW." >&2
+        echo "  Install it with: arch -x86_64 /bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\"" >&2
+        exit 1
+      fi
+      arch -x86_64 "$INTEL_BREW" install --quiet ffmpeg
+      FFMPEG_SRC="/usr/local/opt/ffmpeg/bin/ffmpeg"
+    else
+      brew install --quiet ffmpeg 2>/dev/null || true
+      FFMPEG_SRC="$(brew --prefix ffmpeg)/bin/ffmpeg"
+    fi
+    if [[ ! -f "$FFMPEG_SRC" ]]; then
+      echo "  ERROR: ffmpeg binary not found at $FFMPEG_SRC after install." >&2
+      exit 1
+    fi
     cp "$FFMPEG_SRC" "$FFMPEG_DEST"
     chmod 755 "$FFMPEG_DEST"
   elif [[ "$TRIPLE" == "x86_64-unknown-linux-gnu" ]]; then
