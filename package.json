@@ -6,6 +6,7 @@
     "setup": "bash scripts/download-binaries.sh",
     "postinstall": "bash scripts/download-binaries.sh",
     "dev": "tauri dev",
+    "tauri": "tauri",
     "build": "tauri build",
     "cli": "ts-node src/cli/index.ts",
     "serve": "ts-node-dev src/server/index.ts",
