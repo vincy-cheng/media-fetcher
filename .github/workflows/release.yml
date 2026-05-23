@@ -83,6 +83,8 @@ jobs:
           if [[ "${{ matrix.args }}" == *"--target"* ]]; then
             TARGET_TRIPLE=$(echo "${{ matrix.args }}" | sed 's/.*--target[[:space:]]*//')
             bash scripts/download-binaries.sh "$TARGET_TRIPLE"
+          elif [[ "${{ matrix.platform }}" == "windows-latest" ]]; then
+            bash scripts/download-binaries.sh "x86_64-pc-windows-msvc"
           fi
 
       - uses: tauri-apps/tauri-action@v0

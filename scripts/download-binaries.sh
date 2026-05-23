@@ -33,7 +33,10 @@ echo "Host triple:   $HOST_TRIPLE"
 echo "Target triple: $TRIPLE"
 
 # ── [1/2] yt-dlp ─────────────────────────────────────────────────────────────
-YTDLP_DEST="$BINARIES_DIR/yt-dlp-$TRIPLE"
+EXE_SUFFIX=""
+[[ "$TRIPLE" == *windows* ]] && EXE_SUFFIX=".exe"
+
+YTDLP_DEST="$BINARIES_DIR/yt-dlp-$TRIPLE$EXE_SUFFIX"
 
 echo ""
 echo "[1/2] yt-dlp"
@@ -42,9 +45,10 @@ if [ -f "$YTDLP_DEST" ]; then
   echo "  yt-dlp already exists, skipping."
 else
   case "$TRIPLE" in
-    *apple-darwin*)           YTDLP_URL="https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_macos" ;;
-    x86_64-unknown-linux-gnu) YTDLP_URL="https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_linux" ;;
+    *apple-darwin*)            YTDLP_URL="https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_macos" ;;
+    x86_64-unknown-linux-gnu)  YTDLP_URL="https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_linux" ;;
     aarch64-unknown-linux-gnu) YTDLP_URL="https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_linux_aarch64" ;;
+    *windows*)                 YTDLP_URL="https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe" ;;
     *) echo "  No yt-dlp URL for triple $TRIPLE — skipping." >&2; YTDLP_URL="" ;;
   esac
   if [ -n "${YTDLP_URL:-}" ]; then
@@ -56,7 +60,7 @@ else
 fi
 
 # ── [2/2] ffmpeg ──────────────────────────────────────────────────────────────
-FFMPEG_DEST="$BINARIES_DIR/ffmpeg-$TRIPLE"
+FFMPEG_DEST="$BINARIES_DIR/ffmpeg-$TRIPLE$EXE_SUFFIX"
 
 echo ""
 echo "[2/2] ffmpeg"
@@ -68,8 +72,8 @@ else
     if [[ "$TRIPLE" == "x86_64-apple-darwin" && "$HOST_TRIPLE" == "aarch64-apple-darwin" ]]; then
       # Cross-compile on ARM runner: use Intel Homebrew (Rosetta 2) at /usr/local
       echo "  Cross-compiling: installing ffmpeg via Intel Homebrew (Rosetta 2)"
-      arch -x86_64 /usr/local/bin/brew install --quiet ffmpeg 2>/dev/null || true
-      FFMPEG_SRC="/usr/local/opt/ffmpeg/bin/ffmpeg"
+      arch -x86_64 /usr/local/bin/brew install --quiet ffmpeg
+      FFMPEG_SRC="$(arch -x86_64 /usr/local/bin/brew --prefix ffmpeg)/bin/ffmpeg"
     else
       brew install --quiet ffmpeg 2>/dev/null || true
       FFMPEG_SRC="$(brew --prefix ffmpeg)/bin/ffmpeg"
@@ -94,6 +98,14 @@ else
     mv "$BINARIES_DIR/ffmpeg" "$FFMPEG_DEST"
     rm -f "$TAR_PATH"
     chmod 755 "$FFMPEG_DEST"
+  elif [[ "$TRIPLE" == *windows* ]]; then
+    ZIP_PATH="$BINARIES_DIR/ffmpeg.zip"
+    FFMPEG_URL="https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip"
+    echo "  Downloading $FFMPEG_URL"
+    curl -fL --progress-bar -o "$ZIP_PATH" "$FFMPEG_URL"
+    unzip -jo "$ZIP_PATH" "*/bin/ffmpeg.exe" -d "$BINARIES_DIR"
+    mv "$BINARIES_DIR/ffmpeg.exe" "$FFMPEG_DEST"
+    rm -f "$ZIP_PATH"
   else
     echo "  No ffmpeg download configured for triple $TRIPLE — skipping." >&2
   fi
