@@ -108,7 +108,7 @@ export default function App() {
         <header className="flex items-start justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-              YouTube Audio Downloader
+              Media Fetcher
             </h1>
             <p className="text-sm text-gray-500 dark:text-gray-400">
               Download audio or video in multiple formats

@@ -1,7 +1,7 @@
 [package]
-name = "youtube-audio-downloader"
+name = "media-fetcher"
 version = "0.1.0"
-description = "YouTube Audio Downloader"
+description = "Media Fetcher"
 authors = []
 license = ""
 repository = ""

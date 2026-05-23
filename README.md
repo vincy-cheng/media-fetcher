@@ -1,4 +1,4 @@
-# YouTube Audio Downloader
+# Media Fetcher
 
 Download audio or video from YouTube in multiple formats with a native desktop app, web UI, or CLI.
 
@@ -106,7 +106,7 @@ The CLI and Web modes use `yt-dlp` and `ffmpeg` from your system `PATH` — no s
 ## Architecture
 
 ```
-youtube-audio-downloader/
+media-fetcher/
 ├── src-tauri/                  # Tauri Rust backend (desktop app)
 │   ├── src/
 │   │   ├── commands/

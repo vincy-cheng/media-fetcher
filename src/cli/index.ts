@@ -4,7 +4,7 @@ import { run } from './prompts'
 const program = new Command()
 
 program
-  .name('ytdl')
+  .name('media-fetcher')
   .description('YouTube audio / video downloader CLI')
   .argument('[urls...]', 'YouTube URLs to download')
   .option('-f, --format <format>', 'Output format: mp3|m4a|wav|ogg|flac|mp4|webm')
