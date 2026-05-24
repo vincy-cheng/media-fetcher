@@ -4,20 +4,22 @@ import tailwindcss from '@tailwindcss/vite'
 import path from 'path'
 
 // https://vite.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
     },
   },
-  // Tauri dev server settings
   clearScreen: false,
   server: {
-    port: 1420,
+    port: mode === 'web' ? 5173 : 1420,
     strictPort: true,
     watch: {
       ignored: ['**/src-tauri/**'],
     },
+    ...(mode === 'web'
+      ? { proxy: { '/api': 'http://localhost:3001' } }
+      : {}),
   },
-})
+}))

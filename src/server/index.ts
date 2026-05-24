@@ -1,12 +1,16 @@
 import express from 'express'
 import path from 'path'
-import { getVideoInfo, downloadAudio } from '../core/downloader'
+import os from 'os'
+import fs from 'fs'
+import { getVideoInfo, downloadAudio, YTDLP, FFMPEG } from '../core/downloader'
 
 const app = express()
 app.use(express.json())
 
-// Serve built client in production
 app.use(express.static(path.join(__dirname, '../../client/dist')))
+
+const activeJobs = new Map<string, AbortController>()
+const completedFiles = new Map<string, string>()
 
 app.get('/api/info', async (req, res) => {
   const url = req.query.url as string
@@ -19,10 +23,30 @@ app.get('/api/info', async (req, res) => {
   }
 })
 
+app.get('/api/tools/status', async (_req, res) => {
+  const { execFile } = await import('child_process')
+  const { promisify } = await import('util')
+  const execFileAsync = promisify(execFile)
+
+  const [ytdlp, ffmpeg] = await Promise.all([
+    execFileAsync(YTDLP, ['--version'])
+      .then(({ stdout }) => ({ version: stdout.trim(), error: null }))
+      .catch((e: Error) => ({ version: null, error: e.message })),
+    execFileAsync(FFMPEG, ['-version'])
+      .then(({ stdout }) => ({
+        version: stdout.split('\n')[0].match(/version (\S+)/)?.[1] ?? 'unknown',
+        error: null,
+      }))
+      .catch((e: Error) => ({ version: null, error: e.message })),
+  ])
+
+  res.json({ ytdlp, ffmpeg })
+})
+
 app.post('/api/download', async (req, res) => {
-  const { url, format, resolution, start, end, outputDir } = req.body
-  if (!url || !format || !outputDir) {
-    return res.status(400).json({ error: 'url, format, and outputDir are required' })
+  const { url, format, resolution, start, end, jobId } = req.body
+  if (!url || !format || !jobId) {
+    return res.status(400).json({ error: 'url, format, and jobId are required' })
   }
 
   res.setHeader('Content-Type', 'text/event-stream')
@@ -31,19 +55,60 @@ app.post('/api/download', async (req, res) => {
 
   const send = (data: object) => res.write(`data: ${JSON.stringify(data)}\n\n`)
 
+  const controller = new AbortController()
+  activeJobs.set(jobId, controller)
+
   try {
-    const out = await downloadAudio({ url, format, resolution, start, end, outputDir }, (percent, stage) => {
-      send({ percent, stage, message: `${stage} ${percent}%` })
-    })
-    send({ percent: 100, stage: 'complete', message: `Saved: ${out}`, outputPath: out })
-  } catch (e) {
-    send({ percent: 0, stage: 'error', message: String(e) })
+    const outPath = await downloadAudio(
+      { url, format, resolution, start, end, outputDir: os.tmpdir() },
+      (percent, stage) => { send({ jobId, percent, stage, message: `${stage} ${percent}%` }) },
+      controller.signal,
+    )
+    completedFiles.set(jobId, outPath)
+    send({ jobId, percent: 100, stage: 'complete', message: 'Done', outputPath: path.basename(outPath) })
+  } catch (e: unknown) {
+    const err = e as { name?: string }
+    if (err.name === 'AbortError') {
+      send({ jobId, percent: 0, stage: 'cancelled', message: 'Download cancelled' })
+    } else {
+      send({ jobId, percent: 0, stage: 'error', message: String(e) })
+    }
   } finally {
+    activeJobs.delete(jobId)
     res.end()
   }
 })
 
-// SPA fallback
+app.get('/api/download/file/:jobId', (req, res) => {
+  const { jobId } = req.params
+  const filePath = completedFiles.get(jobId)
+  if (!filePath) return res.status(404).json({ error: 'File not found or already downloaded' })
+
+  const filename = path.basename(filePath)
+  const encodedFilename = encodeURIComponent(filename)
+  res.setHeader('Content-Disposition', `attachment; filename="${filename.replace(/[^\x20-\x7E]/g, '_')}"; filename*=UTF-8''${encodedFilename}`)
+  res.setHeader('Content-Type', 'application/octet-stream')
+
+  const stream = fs.createReadStream(filePath)
+  stream.pipe(res)
+  stream.on('end', () => {
+    completedFiles.delete(jobId)
+    try { fs.unlinkSync(filePath) } catch { /* already gone */ }
+  })
+  stream.on('error', () => res.status(500).end())
+})
+
+app.post('/api/cancel', (req, res) => {
+  const { jobId } = req.body
+  if (!jobId) return res.status(400).json({ error: 'jobId is required' })
+  const controller = activeJobs.get(jobId)
+  if (controller) {
+    controller.abort()
+    activeJobs.delete(jobId)
+  }
+  res.json({ ok: true })
+})
+
 app.get('*', (_req, res) => {
   res.sendFile(path.join(__dirname, '../../client/dist/index.html'))
 })

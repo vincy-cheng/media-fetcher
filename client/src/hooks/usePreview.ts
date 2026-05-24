@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef } from 'react'
 import { readFile } from '@tauri-apps/plugin-fs'
-import { extractPreviewAudio } from '@/api/client'
+import { extractPreviewAudio, capabilities } from '@/api/client'
 
 export function usePreview() {
   const [audioUrl, setAudioUrl] = useState<string | null>(null)
@@ -10,6 +10,7 @@ export function usePreview() {
   const cancelledRef = useRef(false)
 
   const load = useCallback(async (url: string) => {
+    if (!capabilities.canPreview) return
     cancelledRef.current = false
     setLoading(true)
     setError(null)

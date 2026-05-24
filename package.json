@@ -10,7 +10,7 @@
     "build": "tauri build",
     "cli": "ts-node src/cli/index.ts",
     "serve": "ts-node-dev src/server/index.ts",
-    "dev:web": "concurrently \"npm run serve\" \"npm run dev --prefix client\""
+    "dev:web": "concurrently \"npm run serve\" \"npm run dev:web --prefix client\""
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2",

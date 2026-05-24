@@ -1,62 +1,25 @@
 // client/src/api/client.ts
-import { invoke } from '@tauri-apps/api/core'
-import { listen, type UnlistenFn } from '@tauri-apps/api/event'
-import type { VideoInfo, DownloadOptions, JobProgress, DownloadCompletePayload, AppSettings, ToolsStatus, UpdateProgress } from './types'
+// client/src/api/client.ts
+import { TauriApiClient } from './TauriApiClient'
+import { WebApiClient } from './WebApiClient'
+export type { UnlistenFn, Capabilities } from './IApiClient'
 
-export async function getVideoInfo(url: string): Promise<VideoInfo> {
-  return invoke<VideoInfo>('get_video_info', { url })
+function isTauri(): boolean {
+  return Boolean((globalThis as unknown as { __TAURI_INTERNALS__?: unknown }).__TAURI_INTERNALS__)
 }
 
-export async function extractPreviewAudio(url: string): Promise<string> {
-  return invoke<string>('extract_preview_audio', { url })
-}
+const impl = isTauri() ? new TauriApiClient() : new WebApiClient()
 
-export async function downloadMedia(options: DownloadOptions): Promise<string> {
-  return invoke<string>('download_media', {
-    jobId: options.jobId,
-    url: options.url,
-    format: options.format,
-    resolution: options.resolution ?? null,
-    start: options.start ?? null,
-    end: options.end ?? null,
-    outputDir: options.outputDir,
-    bitrate: options.bitrate ?? null,
-    duration: options.duration ?? null,
-  })
-}
-
-export async function cancelDownload(jobId: string): Promise<void> {
-  return invoke<void>('cancel_download', { jobId })
-}
-
-export function onDownloadProgress(cb: (progress: JobProgress) => void): Promise<UnlistenFn> {
-  return listen<JobProgress>('download-progress', (e) => cb(e.payload))
-}
-
-export function onDownloadComplete(cb: (payload: DownloadCompletePayload) => void): Promise<UnlistenFn> {
-  return listen<DownloadCompletePayload>('download-complete', (e) => cb(e.payload))
-}
-
-export async function getSettings(): Promise<AppSettings> {
-  return invoke<AppSettings>('get_settings')
-}
-
-export async function saveSettings(settings: AppSettings): Promise<void> {
-  return invoke<void>('save_settings', { settings })
-}
-
-export async function checkToolsStatus(): Promise<ToolsStatus> {
-  return invoke<ToolsStatus>('check_tools_status')
-}
-
-export async function checkYtdlpUpdate(): Promise<string> {
-  return invoke<string>('check_ytdlp_update')
-}
-
-export async function updateYtdlp(): Promise<void> {
-  return invoke<void>('update_ytdlp')
-}
-
-export function onUpdateProgress(cb: (progress: UpdateProgress) => void): Promise<UnlistenFn> {
-  return listen<UpdateProgress>('update_progress', (e) => cb(e.payload))
-}
+export const capabilities = impl.capabilities
+export const getVideoInfo = impl.getVideoInfo.bind(impl)
+export const extractPreviewAudio = impl.extractPreviewAudio.bind(impl)
+export const downloadMedia = impl.downloadMedia.bind(impl)
+export const cancelDownload = impl.cancelDownload.bind(impl)
+export const onDownloadProgress = impl.onDownloadProgress.bind(impl)
+export const onDownloadComplete = impl.onDownloadComplete.bind(impl)
+export const getSettings = impl.getSettings.bind(impl)
+export const saveSettings = impl.saveSettings.bind(impl)
+export const checkToolsStatus = impl.checkToolsStatus.bind(impl)
+export const checkYtdlpUpdate = impl.checkYtdlpUpdate.bind(impl)
+export const updateYtdlp = impl.updateYtdlp.bind(impl)
+export const onUpdateProgress = impl.onUpdateProgress.bind(impl)

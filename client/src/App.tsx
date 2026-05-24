@@ -21,6 +21,7 @@ import type { Format, VideoResolution, Bitrate } from "@/api/types";
 import { ABSOLUTE_MAX_DURATION_SECONDS, isVideoFormat } from "@/api/types";
 import { ResolutionSelector } from "@/components/ResolutionSelector";
 import { GearIcon, SunIcon, MoonIcon } from "@radix-ui/react-icons";
+import { capabilities } from "@/api/client";
 
 type Tab = "single" | "batch";
 
@@ -83,7 +84,8 @@ export default function App() {
   };
 
   const handleDownload = async () => {
-    if (!info || !outputDir) return;
+    if (!info) return;
+    if (capabilities.canBrowseFolder && !outputDir) return;
     setDurationError(null);
 
     const prefs = settings.downloadPreferences;
@@ -226,7 +228,7 @@ export default function App() {
               onCancelPreview={cancelPreview}
               previewLoading={previewLoading}
               previewDisabled={infoLoading}
-              hidePreview={isVideoFormat(format)}
+              hidePreview={isVideoFormat(format) || !capabilities.canPreview}
             />
           )}
 
@@ -239,7 +241,7 @@ export default function App() {
             </p>
           )}
 
-          {audioUrl && info && !isVideoFormat(format) && (
+          {capabilities.canPreview && audioUrl && info && !isVideoFormat(format) && (
             <div className="space-y-3 rounded-lg border border-primary-200 bg-primary-50 p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
               <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
                 Preview & Trim
@@ -269,7 +271,9 @@ export default function App() {
                   onChange={setResolution}
                 />
               )}
+              {capabilities.canBrowseFolder && (
               <OutputFolder value={outputDir} onChange={setOutputDir} />
+              )}
               {durationError && (
                 <p
                   role="alert"
@@ -281,7 +285,7 @@ export default function App() {
               <button
                 type="button"
                 onClick={handleDownload}
-                disabled={!outputDir}
+                disabled={capabilities.canBrowseFolder && !outputDir}
                 className="w-full cursor-pointer rounded-md bg-primary-600 py-2 text-sm font-semibold text-white hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Download{" "}

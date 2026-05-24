@@ -1,6 +1,6 @@
 # Media Fetcher
 
-Download audio or video from YouTube in multiple formats with a native desktop app, web UI, or CLI.
+Download audio or video from Video Platform (i.e YouTube) in multiple formats with a native desktop app, web UI, or CLI.
 
 Built with **Tauri 2** (Rust backend) + **React + Vite** (frontend).
 
@@ -18,6 +18,21 @@ Built with **Tauri 2** (Rust backend) + **React + Vite** (frontend).
 - ⚙️ **Persistent settings** — default format, bitrate, and output folder saved to app config
 - 🌙 **Dark mode**
 - 🖥 **Three modes** — Desktop app, Web UI, or CLI
+
+---
+
+## Installation
+
+Download the latest release for your platform from the [Releases](https://github.com/vincy-cheng/media-fetcher/releases) page and follow the instructions in the README.
+
+### Troubleshooting
+
+The app is blocked by macOS Gatekeeper because it's not notarized. You may see a warning like "“Media Fetcher” is damaged and can’t be opened. You should eject the disk image.". To bypass this warning:
+
+1. Open Terminal Ctrl + Space → type "Terminal" → Enter
+2. Run `sudo xattr -d com.apple.quarantine /Applications/Media\ Fetcher.app`
+
+**Note**: The path may be different if you moved the app to a different location. Adjust the path accordingly.
 
 ---
 
@@ -41,6 +56,8 @@ npm run dev:web   # starts Express on :3001 + Vite on :5173
 ```
 
 Then open `http://localhost:5173`.
+
+> **Web UI limitations vs Desktop:** Audio preview, native folder picker, and yt-dlp self-update are not available in web mode. Output folder must be typed manually.
 
 ### CLI
 
@@ -73,8 +90,8 @@ npm run cli
 ## Requirements
 
 ### All modes
-- **[yt-dlp](https://github.com/yt-dlp/yt-dlp)** — YouTube downloader
-- **[ffmpeg](https://ffmpeg.org/)** — Audio conversion
+- **[yt-dlp](https://github.com/yt-dlp/yt-dlp)** — Video downloader (supported video sites refers to yt-dlp [docs](https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md))
+- **[ffmpeg](https://ffmpeg.org/)** — Audio and video conversion
 
 Install on macOS:
 ```bash
@@ -99,82 +116,11 @@ npm install --prefix client
 
 > **Manual sidecar setup** (if the script fails): see [Sidecar Setup](#sidecar-setup-manual).
 
-The CLI and Web modes use `yt-dlp` and `ffmpeg` from your system `PATH` — no sidecar setup needed.
+The CLI and Web modes resolve binaries via `resolveBin()` in `src/core/downloader.ts`: checks `YTDLP_BIN`/`FFMPEG_BIN` env vars first, then falls back to the bundled sidecars in `src-tauri/binaries/`, then falls back to system `PATH`.
 
 ---
 
-## Architecture
-
-```
-media-fetcher/
-├── src-tauri/                  # Tauri Rust backend (desktop app)
-│   ├── src/
-│   │   ├── commands/
-│   │   │   ├── info.rs         # get_video_info — yt-dlp --dump-json
-│   │   │   ├── preview.rs      # extract_preview_audio — temp file for WaveSurfer
-│   │   │   ├── download.rs     # download_audio — yt-dlp + ffmpeg + progress events
-│   │   │   └── settings.rs     # get_settings / save_settings — app config dir JSON
-│   │   └── utils/
-│   │       ├── sidecar.rs      # yt-dlp / ffmpeg sidecar helpers
-│   │       ├── types.rs        # VideoInfo, JobProgress, AppSettings structs
-│   │       └── validation.rs   # YouTube URL validation
-│   ├── binaries/               # Platform-tagged sidecar binaries (git-ignored)
-│   └── tauri.conf.json
-├── client/                     # React + Vite frontend (shared by desktop + web)
-│   └── src/
-│       ├── api/
-│       │   ├── client.ts       # invoke() / listen() wrappers
-│       │   └── types.ts        # Shared TS types
-│       ├── hooks/
-│       │   ├── useVideoInfo.ts
-│       │   ├── usePreview.ts      # convertFileSrc() for WaveSurfer
-│       │   ├── useDownloadJob.ts
-│       │   ├── useBatchDownload.ts  # batch queue + concurrent download logic
-│       │   ├── useSettings.ts     # load/save persistent settings via Rust
-│       │   └── useDarkMode.ts
-│       └── components/
-│           ├── UrlInput.tsx
-│           ├── VideoInfoCard.tsx
-│           ├── FormatSelector.tsx
-│           ├── OutputFolder.tsx      # Tauri dialog plugin
-│           ├── AudioPreview.tsx      # WaveSurfer + RegionsPlugin
-│           ├── TrimControls.tsx
-│           ├── JobQueue.tsx
-│           ├── BatchDownload.tsx     # batch tab UI
-│           ├── BatchUrlInput.tsx
-│           ├── BatchItemRow.tsx
-│           └── SettingsModal.tsx
-├── src/                        # Node.js backend (CLI + web mode)
-│   ├── core/
-│   │   ├── downloader.ts       # yt-dlp + ffmpeg via child_process
-│   │   └── types.ts
-│   ├── cli/
-│   │   ├── index.ts            # commander entry point
-│   │   └── prompts.ts          # inquirer prompts
-│   └── server/
-│       └── index.ts            # Express server (web mode)
-└── scripts/
-    └── download-binaries.sh    # auto-downloads sidecar binaries on npm install
-```
-
-### How the desktop app works
-
-```
-Rust (Tauri core)
-  └── invoke("get_video_info", { url })    → yt-dlp --dump-json
-  └── invoke("extract_preview_audio")     → yt-dlp → temp file → path returned
-  └── invoke("download_audio", {...})     → yt-dlp → ffmpeg → emits progress events
-  └── invoke("get_settings")             → reads app config dir / settings.json
-  └── invoke("save_settings", {...})     → writes app config dir / settings.json
-
-React (WebView)
-  └── @tauri-apps/api invoke()            → calls Rust commands
-  └── @tauri-apps/api listen()            → receives "download-progress" / "download-complete" events
-  └── convertFileSrc(tempPath)            → safe URL for WaveSurfer
-  └── @tauri-apps/plugin-dialog open()    → native folder picker
-```
-
-### Batch download
+## Batch download
 
 - Up to **20 URLs** queued (`MAX_BATCH_URLS = 20`)
 - Video info fetched in parallel as URLs are added

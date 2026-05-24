@@ -1,12 +1,28 @@
 import { execFile } from 'child_process'
 import { promisify } from 'util'
+import path from 'path'
+import fs from 'fs'
 import type { VideoInfo, DownloadOptions } from './types'
 import { isVideoFormat } from './types'
 
 const execFileAsync = promisify(execFile)
 
-const YTDLP = process.env.YTDLP_BIN ?? 'yt-dlp'
-const FFMPEG = process.env.FFMPEG_BIN ?? 'ffmpeg'
+function resolveBin(envVar: string, name: string): string {
+  if (process.env[envVar]) return process.env[envVar]!
+  const archMap: Record<string, string> = { arm64: 'aarch64', x64: 'x86_64' }
+  const platformMap: Record<string, string> = {
+    darwin: 'apple-darwin',
+    linux: 'unknown-linux-gnu',
+    win32: 'pc-windows-msvc',
+  }
+  const arch = archMap[process.arch] ?? process.arch
+  const platform = platformMap[process.platform] ?? process.platform
+  const sidecar = path.resolve(__dirname, '../../src-tauri/binaries', `${name}-${arch}-${platform}`)
+  return fs.existsSync(sidecar) ? sidecar : name
+}
+
+export const YTDLP = resolveBin('YTDLP_BIN', 'yt-dlp')
+export const FFMPEG = resolveBin('FFMPEG_BIN', 'ffmpeg')
 
 export async function getVideoInfo(url: string): Promise<VideoInfo> {
   const { stdout } = await execFileAsync(YTDLP, [
@@ -26,6 +42,7 @@ export async function getVideoInfo(url: string): Promise<VideoInfo> {
 export async function downloadAudio(
   options: DownloadOptions,
   onProgress?: (pct: number, stage: string) => void,
+  signal?: AbortSignal,
 ): Promise<string> {
   const { url, format, resolution, start, end, outputDir } = options
   const os = await import('os')
@@ -47,7 +64,7 @@ export async function downloadAudio(
     '--no-warnings',
     '-o', tmpTemplate,
     url,
-  ])
+  ], { signal })
 
   onProgress?.(50, 'converting')
 
@@ -60,8 +77,8 @@ export async function downloadAudio(
   // Get title
   const { stdout: titleOut } = await execFileAsync(YTDLP, [
     '--get-title', '--no-playlist', '--no-warnings', url,
-  ])
-  const title = titleOut.trim().replace(/[^a-zA-Z0-9 \-_.]/g, '_')
+  ], { signal })
+  const title = titleOut.trim().replace(/[^\p{L}\p{N} \-_.]/gu, '_')
   const outPath = path.join(outputDir, `${title}.${format}`)
 
   const ffmpegArgs: string[] = ['-y', '-i', rawFile]
@@ -87,7 +104,7 @@ export async function downloadAudio(
   }
   ffmpegArgs.push(outPath)
 
-  await execFileAsync(FFMPEG, ffmpegArgs)
+  await execFileAsync(FFMPEG, ffmpegArgs, { signal })
   fs.unlinkSync(rawFile)
 
   onProgress?.(100, 'complete')

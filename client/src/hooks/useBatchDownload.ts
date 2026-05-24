@@ -3,7 +3,7 @@ import { useState, useCallback, useEffect, useRef } from 'react'
 import { getVideoInfo, downloadMedia, cancelDownload, onDownloadProgress, onDownloadComplete } from '@/api/client'
 import type { VideoInfo, Format, VideoResolution, Bitrate, JobProgress } from '@/api/types'
 import { ABSOLUTE_MAX_DURATION_SECONDS } from '@/api/types'
-import type { UnlistenFn } from '@tauri-apps/api/event'
+import type { UnlistenFn } from '@/api/client'
 
 export const MAX_BATCH_URLS = 20
 export const MAX_CONCURRENT_DOWNLOADS = 3

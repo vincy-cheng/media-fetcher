@@ -16,6 +16,16 @@ The shared business logic lives in two parallel implementations that must stay i
 
 **Types are duplicated** between `client/src/api/types.ts` (TypeScript) and `src-tauri/src/utils/types.rs` (Rust). When adding or changing a type, update both.
 
+### Dual API Client (frontend)
+
+The frontend uses a runtime-selected implementation of `IApiClient` (`client/src/api/IApiClient.ts`):
+- `TauriApiClient` — wraps `invoke()`/`listen()`; all capabilities `true`
+- `WebApiClient` — uses `fetch`/SSE + `localStorage`; capabilities: `canUpdate: false`, `canPreview: false`, `canBrowseFolder: false`
+
+The factory in `client/src/api/client.ts` selects the implementation at module load via `window.__TAURI_INTERNALS__` detection. All hooks import from `@/api/client` — never directly from `@tauri-apps/api`.
+
+**`Capabilities`** drives conditional UI: output folder picker, audio preview, and yt-dlp update UI are hidden in web mode.
+
 ### Desktop IPC flow
 
 ```
@@ -33,7 +43,7 @@ The desktop app bundles `yt-dlp` and `ffmpeg` as Tauri sidecars in `src-tauri/bi
 
 `run_ytdlp()` in `src-tauri/src/utils/sidecar.rs` checks `app_local_data_dir/yt-dlp` first and falls back to the bundled sidecar — this is the user-updatable override path.
 
-In CLI/web mode, binaries are resolved from `PATH` or overridden with `YTDLP_BIN` / `FFMPEG_BIN` env vars.
+In CLI/web mode, binaries are resolved by `resolveBin()` in `src/core/downloader.ts`: checks `YTDLP_BIN` / `FFMPEG_BIN` env vars → sidecar in `src-tauri/binaries/` → falls back to bare name for `PATH`.
 
 ### Job cancellation (desktop)
 
@@ -96,7 +106,7 @@ All Rust structs that cross the IPC boundary use `#[serde(rename_all = "camelCas
 yt-dlp downloads use the pattern `ytdl_dl_{job_id}.%(ext)s` in `std::env::temp_dir()`. After ffmpeg conversion the raw file is always deleted.
 
 ### Filename sanitization
-Output filenames keep only `[a-zA-Z0-9 \-_.]`; everything else becomes `_`. Implemented in `sanitize_filename()` (Rust) and equivalently with a regex replace in Node.js.
+Output filenames allow Unicode letters/digits (`\p{L}\p{N}`), spaces, hyphens, underscores, and dots; everything else becomes `_`. Rust uses `c.is_alphanumeric()` (Unicode-aware) in `sanitize_filename()`. Node.js uses `/[^\p{L}\p{N} \-_.]/gu` in `downloader.ts`. Both preserve CJK and other non-ASCII characters.
 
 ### Duration limits
 Hard ceiling of 3 hours (`ABSOLUTE_MAX_DURATION_SECONDS = 10_800`) enforced in both Rust (`download.rs`) and TypeScript (`ABSOLUTE_MAX_DURATION_SECONDS` constant in `client/src/api/types.ts`). The user can set a lower limit via `AppSettings.downloadPreferences.maxDurationSeconds`.

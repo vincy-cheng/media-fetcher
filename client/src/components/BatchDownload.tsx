@@ -8,6 +8,7 @@ import { OutputFolder } from "@/components/OutputFolder";
 import { useBatchDownload } from "@/hooks/useBatchDownload";
 import type { Format, VideoResolution, Bitrate } from "@/api/types";
 import { isVideoFormat } from "@/api/types";
+import { capabilities } from "@/api/client";
 
 const PAGE_SIZE = 5;
 const NON_RETRIABLE = new Set([
@@ -68,7 +69,9 @@ export function BatchDownload({
       (!i.progress || !NON_RETRIABLE.has(i.progress.stage)),
   ).length;
   const canDownload =
-    readyCount > 0 && outputDir.trim().length > 0 && !downloading;
+    readyCount > 0 &&
+    (outputDir.trim().length > 0 || !capabilities.canBrowseFolder) &&
+    !downloading;
 
   const totalPages = Math.ceil(completedItems.length / PAGE_SIZE);
   const pagedCompleted = completedItems.slice(
@@ -126,7 +129,9 @@ export function BatchDownload({
       {isVideoFormat(format) && (
         <ResolutionSelector value={resolution} onChange={setResolution} />
       )}
+      {capabilities.canBrowseFolder && (
       <OutputFolder value={outputDir} onChange={setOutputDir} />
+      )}
 
       <button
         type="button"

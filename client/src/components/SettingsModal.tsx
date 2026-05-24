@@ -10,6 +10,7 @@ import type {
   UpdateProgress,
 } from "@/api/types";
 import { isVideoFormat } from "@/api/types";
+import { capabilities } from "@/api/client";
 
 const AUDIO_FORMATS: { value: Format; label: string }[] = [
   { value: "mp3", label: "MP3" },
@@ -249,6 +250,7 @@ export function SettingsModal({
               </div>
 
               {/* Default Output Folder */}
+              {capabilities.canBrowseFolder && (
               <div className="flex flex-col gap-1.5">
                 <label
                   htmlFor="outputDir"
@@ -275,6 +277,7 @@ export function SettingsModal({
                   </button>
                 </div>
               </div>
+              )}
 
               {/* Default Bitrate (lossy audio formats only) */}
               {!isVideo && !isLossless && (
@@ -383,6 +386,7 @@ export function SettingsModal({
                     )}
                   </p>
                 </div>
+                {capabilities.canUpdate && (
                 <div className="flex flex-col items-end gap-1">
                   {!updating && (
                     <button
@@ -408,10 +412,11 @@ export function SettingsModal({
                     </button>
                   )}
                 </div>
+                )}
               </div>
 
               {/* Update progress bar */}
-              {updating && updateProgress && (
+              {capabilities.canUpdate && updating && updateProgress && (
                 <div className="space-y-1">
                   <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400">
                     <span>{updateProgress.message}</span>
@@ -426,7 +431,7 @@ export function SettingsModal({
                 </div>
               )}
 
-              {updateError && (
+              {capabilities.canUpdate && updateError && (
                 <p className="text-xs text-red-600 dark:text-red-400">
                   Update failed: {updateError}
                 </p>
