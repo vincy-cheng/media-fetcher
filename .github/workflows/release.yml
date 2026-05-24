@@ -19,13 +19,14 @@ jobs:
 
       - name: Validate branch
         run: |
-          git fetch origin main
-          if ! git merge-base --is-ancestor ${{ github.sha }} origin/main; then
-            echo "Error: Tag must be created from the main branch."
+          git fetch origin master
+          if ! git merge-base --is-ancestor ${{ github.sha }} origin/master; then
+            echo "Error: Tag must be created from the master branch."
             exit 1
           fi
 
   publish-tauri:
+    needs: validate
     permissions:
       contents: write
     strategy:
