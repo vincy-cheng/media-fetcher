@@ -182,4 +182,3 @@ chmod +x src-tauri/binaries/ffmpeg-aarch64-apple-darwin
 | macOS Apple Silicon | `aarch64-apple-darwin` |
 | macOS Intel | `x86_64-apple-darwin` |
 | Linux x86_64 | `x86_64-unknown-linux-gnu` |
-| Windows x86_64 | `x86_64-pc-windows-msvc` (add `.exe`) |
