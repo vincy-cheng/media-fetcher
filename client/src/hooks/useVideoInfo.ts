@@ -7,15 +7,17 @@ export function useVideoInfo() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const fetch = useCallback(async (url: string) => {
+  const fetch = useCallback(async (url: string): Promise<VideoInfo | null> => {
     setLoading(true)
     setError(null)
     try {
       const data = await getVideoInfo(url)
       setInfo(data)
+      return data
     } catch (e) {
       setError(String(e))
       setInfo(null)
+      return null
     } finally {
       setLoading(false)
     }

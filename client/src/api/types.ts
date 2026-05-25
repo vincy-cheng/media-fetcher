@@ -57,6 +57,7 @@ export interface DownloadPreferences {
   defaultResolution: VideoResolution
   defaultOutputDir: string
   defaultBitrate: Bitrate
+  autoOpenPreview: boolean
   /** User-configured max duration in seconds. null = use the 3-hour absolute ceiling. */
   maxDurationSeconds: number | null
 }

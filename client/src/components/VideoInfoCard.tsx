@@ -62,7 +62,7 @@ export function VideoInfoCard({
               <button
                 onClick={onPreview}
                 disabled={previewDisabled}
-                className="inline-flex cursor-pointer items-center gap-1 rounded bg-primary-300 px-3 py-1 text-xs font-medium text-primary-800 hover:bg-primary-400 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-indigo-900/30 dark:text-indigo-300 dark:hover:bg-indigo-900/50"
+                className="inline-flex cursor-pointer items-center gap-1 rounded bg-primary-600 px-3 py-1 text-xs font-medium text-white hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <PlayIcon />
                 Preview

@@ -80,6 +80,9 @@ export function SettingsModal({
   );
   const [outputDir, setOutputDir] = useState(prefs.defaultOutputDir);
   const [bitrate, setBitrate] = useState<Bitrate>(prefs.defaultBitrate);
+  const [autoOpenPreview, setAutoOpenPreview] = useState<boolean>(
+    prefs.autoOpenPreview ?? false,
+  );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [picking, setPicking] = useState(false);
@@ -116,6 +119,7 @@ export function SettingsModal({
           defaultResolution: resolution,
           defaultOutputDir: outputDir,
           defaultBitrate: bitrate,
+          autoOpenPreview,
           maxDurationSeconds:
             maxDurationMinutes.trim() !== "" && Number(maxDurationMinutes) > 0
               ? Number(maxDurationMinutes) * 60
@@ -330,6 +334,30 @@ export function SettingsModal({
                     minutes
                   </span>
                 </div>
+
+                {/* Auto-open preview */}
+                {capabilities.canPreview && (
+                  <div className="flex items-start gap-3">
+                    <input
+                      id="autoOpenPreview"
+                      type="checkbox"
+                      checked={autoOpenPreview}
+                      onChange={(e) => setAutoOpenPreview(e.target.checked)}
+                      className="mt-0.5 h-4 w-4 cursor-pointer rounded border-primary-300 text-primary-600 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-800"
+                    />
+                    <div className="space-y-0.5">
+                      <label
+                        htmlFor="autoOpenPreview"
+                        className="cursor-pointer text-sm font-medium text-gray-700 dark:text-gray-300"
+                      >
+                        Auto-open Preview after Fetch
+                      </label>
+                      <p className="text-xs text-gray-400 dark:text-gray-500">
+                        Automatically open Preview & Trim when a URL is fetched.
+                      </p>
+                    </div>
+                  </div>
+                )}
                 <p className="text-xs text-gray-400 dark:text-gray-500">
                   Leave empty for no custom limit (absolute max: 3 hours).
                 </p>

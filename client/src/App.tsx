@@ -38,6 +38,7 @@ export default function App() {
     error: previewError,
     load: loadPreview,
     cancel: cancelPreview,
+    reset: resetPreview,
   } = usePreview();
   const {
     jobs,
@@ -81,6 +82,23 @@ export default function App() {
     setTrimStart(0);
     setTrimEnd(info.duration);
     await loadPreview(info.url);
+  };
+
+  const handleFetchInfo = async (url: string) => {
+    resetPreview();
+    setTrimStart(0);
+    setTrimEnd(0);
+    const data = await fetchInfo(url);
+    if (
+      data &&
+      capabilities.canPreview &&
+      !isVideoFormat(format) &&
+      settings.downloadPreferences.autoOpenPreview
+    ) {
+      setTrimStart(0);
+      setTrimEnd(data.duration);
+      await loadPreview(data.url);
+    }
   };
 
   const handleDownload = async () => {
@@ -196,7 +214,7 @@ export default function App() {
           hidden={activeTab !== "single"}
           className="mt-4 space-y-6"
         >
-          <UrlInput onSubmit={fetchInfo} loading={infoLoading} />
+          <UrlInput onSubmit={handleFetchInfo} loading={infoLoading} />
 
           {infoError && (
             <p

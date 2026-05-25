@@ -30,6 +30,8 @@ pub struct DownloadPreferences {
     pub default_resolution: String,
     pub default_output_dir: String,
     pub default_bitrate: u16,
+    #[serde(default)]
+    pub auto_open_preview: bool,
     /// User-configurable max duration in seconds. None means use the absolute 3-hour ceiling.
     #[serde(default)]
     pub max_duration_seconds: Option<u32>,
@@ -42,6 +44,7 @@ impl Default for DownloadPreferences {
             default_resolution: "1080p".to_string(),
             default_output_dir: String::new(),
             default_bitrate: 192,
+            auto_open_preview: false,
             max_duration_seconds: None,
         }
     }

@@ -19,6 +19,7 @@ const DEFAULT_SETTINGS: AppSettings = {
     defaultResolution: '1080p',
     defaultOutputDir: '',
     defaultBitrate: 192,
+    autoOpenPreview: false,
     maxDurationSeconds: null,
   },
 }
@@ -133,7 +134,17 @@ export class WebApiClient implements IApiClient {
   async getSettings(): Promise<AppSettings> {
     try {
       const raw = localStorage.getItem(SETTINGS_KEY)
-      return raw ? (JSON.parse(raw) as AppSettings) : DEFAULT_SETTINGS
+      if (!raw) return DEFAULT_SETTINGS
+      const parsed = JSON.parse(raw) as AppSettings
+      return {
+        ...DEFAULT_SETTINGS,
+        ...parsed,
+        cookieConfig: { ...DEFAULT_SETTINGS.cookieConfig, ...parsed.cookieConfig },
+        downloadPreferences: {
+          ...DEFAULT_SETTINGS.downloadPreferences,
+          ...parsed.downloadPreferences,
+        },
+      }
     } catch {
       return DEFAULT_SETTINGS
     }
