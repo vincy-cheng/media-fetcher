@@ -10,7 +10,38 @@ app.use(express.json())
 app.use(express.static(path.join(__dirname, '../../client/dist')))
 
 const activeJobs = new Map<string, AbortController>()
-const completedFiles = new Map<string, string>()
+type CompletedFileEntry = {
+  filePath: string
+  createdAtMs: number
+  expiresAtMs: number
+}
+
+const COMPLETED_FILE_TTL_MS = 10 * 60 * 1000
+const completedFiles = new Map<string, CompletedFileEntry>()
+
+function clearCompletedFile(jobId: string): void {
+  const entry = completedFiles.get(jobId)
+  if (!entry) return
+  completedFiles.delete(jobId)
+  try {
+    fs.unlinkSync(entry.filePath)
+  } catch (error: unknown) {
+    const err = error as NodeJS.ErrnoException
+    if (err.code !== 'ENOENT') {
+      console.warn(`Failed to delete completed file for job ${jobId}: ${err.message}`)
+    }
+  }
+}
+
+const staleCleanupTimer = setInterval(() => {
+  const now = Date.now()
+  for (const [jobId, entry] of completedFiles) {
+    if (entry.expiresAtMs <= now) {
+      clearCompletedFile(jobId)
+    }
+  }
+}, 60_000)
+staleCleanupTimer.unref()
 
 app.get('/api/info', async (req, res) => {
   const url = req.query.url as string
@@ -44,7 +75,7 @@ app.get('/api/tools/status', async (_req, res) => {
 })
 
 app.post('/api/download', async (req, res) => {
-  const { url, format, resolution, start, end, jobId } = req.body
+  const { url, format, resolution, start, end, jobId, bitrate, duration } = req.body
   if (!url || !format || !jobId) {
     return res.status(400).json({ error: 'url, format, and jobId are required' })
   }
@@ -60,11 +91,15 @@ app.post('/api/download', async (req, res) => {
 
   try {
     const outPath = await downloadAudio(
-      { url, format, resolution, start, end, outputDir: os.tmpdir() },
+      { url, format, resolution, start, end, outputDir: os.tmpdir(), bitrate, duration },
       (percent, stage) => { send({ jobId, percent, stage, message: `${stage} ${percent}%` }) },
       controller.signal,
     )
-    completedFiles.set(jobId, outPath)
+    completedFiles.set(jobId, {
+      filePath: outPath,
+      createdAtMs: Date.now(),
+      expiresAtMs: Date.now() + COMPLETED_FILE_TTL_MS,
+    })
     send({ jobId, percent: 100, stage: 'complete', message: 'Done', outputPath: path.basename(outPath) })
   } catch (e: unknown) {
     const err = e as { name?: string }
@@ -81,8 +116,9 @@ app.post('/api/download', async (req, res) => {
 
 app.get('/api/download/file/:jobId', (req, res) => {
   const { jobId } = req.params
-  const filePath = completedFiles.get(jobId)
-  if (!filePath) return res.status(404).json({ error: 'File not found or already downloaded' })
+  const entry = completedFiles.get(jobId)
+  if (!entry) return res.status(404).json({ error: 'File not found or already downloaded' })
+  const filePath = entry.filePath
 
   const filename = path.basename(filePath)
   const encodedFilename = encodeURIComponent(filename)
@@ -92,10 +128,21 @@ app.get('/api/download/file/:jobId', (req, res) => {
   const stream = fs.createReadStream(filePath)
   stream.pipe(res)
   stream.on('end', () => {
-    completedFiles.delete(jobId)
-    try { fs.unlinkSync(filePath) } catch { /* already gone */ }
+    clearCompletedFile(jobId)
   })
-  stream.on('error', () => res.status(500).end())
+  stream.on('error', () => {
+    clearCompletedFile(jobId)
+    if (!res.headersSent) {
+      res.status(500).end()
+      return
+    }
+    res.end()
+  })
+  res.on('close', () => {
+    if (!res.writableEnded) {
+      clearCompletedFile(jobId)
+    }
+  })
 })
 
 app.post('/api/cancel', (req, res) => {
