@@ -6,6 +6,12 @@ Built with **Tauri 2** (Rust backend) + **React + Vite** (frontend).
 
 ---
 
+## Preview
+
+![Media Fetcher App Preview](assets/app-preview.png)
+
+---
+
 ## Features
 
 - 🎵 Download audio as **mp3, m4a, wav, ogg, or flac**

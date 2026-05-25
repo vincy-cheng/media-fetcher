@@ -337,15 +337,15 @@ export function SettingsModal({
 
                 {/* Auto-open preview */}
                 {capabilities.canPreview && (
-                  <div className="flex items-start gap-3">
+                  <div className="flex items-center gap-3">
                     <input
                       id="autoOpenPreview"
                       type="checkbox"
                       checked={autoOpenPreview}
                       onChange={(e) => setAutoOpenPreview(e.target.checked)}
-                      className="mt-0.5 h-4 w-4 cursor-pointer rounded border-primary-300 text-primary-600 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-800"
+                      className="h-4 w-4 shrink-0 cursor-pointer rounded border-primary-300 text-primary-600 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-800"
                     />
-                    <div className="space-y-0.5">
+                    <div className="space-y-0.5 leading-tight">
                       <label
                         htmlFor="autoOpenPreview"
                         className="cursor-pointer text-sm font-medium text-gray-700 dark:text-gray-300"
