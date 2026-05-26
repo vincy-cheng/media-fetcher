@@ -109,23 +109,14 @@ export async function downloadAudio(
   }
   ffmpegArgs.push(outPath)
 
-  let ffmpegFailed = false
   try {
     await execFileAsync(FFMPEG, ffmpegArgs, { signal })
     onProgress?.(100, 'complete')
     return outPath
   } catch (error) {
-    ffmpegFailed = true
     throw error
   } finally {
-    try {
-      fs.unlinkSync(rawFile)
-    } catch (cleanupError) {
-      if (!ffmpegFailed) {
-        throw cleanupError
-      }
-      console.error(`Failed to remove temporary file: ${rawFile}`, cleanupError)
-    }
+    cleanupDownloadedTempFile(rawFile)
   }
 }
 
@@ -144,4 +135,12 @@ function findDownloadedTempFile(tmpDir: string, prefix: string): string {
     throw new Error('Downloaded file not found')
   }
   return path.join(tmpDir, matches[matches.length - 1]!)
+}
+
+export function cleanupDownloadedTempFile(rawFile: string): void {
+  try {
+    fs.unlinkSync(rawFile)
+  } catch (cleanupError) {
+    console.error(`Failed to remove temporary file: ${rawFile}`, cleanupError)
+  }
 }
