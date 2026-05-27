@@ -27,6 +27,8 @@ export interface DownloadOptions {
   end?: number
   outputDir: string
   bitrate?: Bitrate
+  /** Optional custom base filename (no extension). */
+  outputFilename?: string
   /** UUID matching the job_id passed to the Rust download_media command. */
   jobId: string
   /** Video duration in seconds, used for the backend hard-ceiling check. */
