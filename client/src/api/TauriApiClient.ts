@@ -36,6 +36,7 @@ export class TauriApiClient implements IApiClient {
       start: options.start ?? null,
       end: options.end ?? null,
       outputDir: options.outputDir,
+      outputFilename: options.outputFilename ?? null,
       bitrate: options.bitrate ?? null,
       duration: options.duration ?? null,
     })

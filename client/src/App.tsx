@@ -10,6 +10,7 @@ import { JobQueue } from "@/components/JobQueue";
 import { SettingsModal } from "@/components/SettingsModal";
 import { BatchDownload } from "@/components/BatchDownload";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { FilenameInput } from "@/components/FilenameInput";
 import { useVideoInfo } from "@/hooks/useVideoInfo";
 import { usePreview } from "@/hooks/usePreview";
 import { useDownloadJob } from "@/hooks/useDownloadJob";
@@ -22,6 +23,10 @@ import { ABSOLUTE_MAX_DURATION_SECONDS, isVideoFormat } from "@/api/types";
 import { ResolutionSelector } from "@/components/ResolutionSelector";
 import { GearIcon, SunIcon, MoonIcon } from "@radix-ui/react-icons";
 import { capabilities } from "@/api/client";
+import {
+  sanitizeFilenameBaseName,
+  hasDisallowedFilenameChars,
+} from "@/utils/filename";
 
 type Tab = "single" | "batch";
 
@@ -38,6 +43,7 @@ export default function App() {
     error: previewError,
     load: loadPreview,
     cancel: cancelPreview,
+    reset: resetPreview,
   } = usePreview();
   const {
     jobs,
@@ -59,6 +65,10 @@ export default function App() {
   const [trimEnd, setTrimEnd] = useState(0);
   const [showSettings, setShowSettings] = useState(false);
   const [durationError, setDurationError] = useState<string | null>(null);
+  const [customFilename, setCustomFilename] = useState("");
+  const [filenameSubmitWarning, setFilenameSubmitWarning] = useState<
+    string | null
+  >(null);
   const prefilled = useRef(false);
 
   useEffect(() => {
@@ -70,6 +80,18 @@ export default function App() {
     setBitrate(prefs.defaultBitrate);
     if (prefs.defaultResolution) setResolution(prefs.defaultResolution);
   }, [loaded, settings]);
+
+  const hasInvalidFilenameChars = hasDisallowedFilenameChars(customFilename);
+  const trimmedCustomFilename = customFilename.trim();
+
+  const filenameInvalidCharsWarning = hasInvalidFilenameChars
+    ? "Some characters will be replaced with '_'"
+    : null;
+
+  const filenameEmptyHint =
+    trimmedCustomFilename.length === 0
+      ? "Leave empty to use the default title"
+      : null;
 
   const handleTrimChange = (s: number, e: number) => {
     setTrimStart(s);
@@ -83,10 +105,41 @@ export default function App() {
     await loadPreview(info.url);
   };
 
+  const handleFetchInfo = async (url: string) => {
+    resetPreview();
+    setTrimStart(0);
+    setTrimEnd(0);
+    setFilenameSubmitWarning(null);
+    const data = await fetchInfo(url);
+    if (data) {
+      setCustomFilename(sanitizeFilenameBaseName(data.title));
+    }
+    if (
+      data &&
+      capabilities.canPreview &&
+      !isVideoFormat(format) &&
+      settings.downloadPreferences.autoOpenPreview
+    ) {
+      setTrimStart(0);
+      setTrimEnd(data.duration);
+      await loadPreview(data.url);
+    }
+  };
+
   const handleDownload = async () => {
     if (!info) return;
     if (capabilities.canBrowseFolder && !outputDir) return;
     setDurationError(null);
+
+    const sanitizedFallbackTitle = sanitizeFilenameBaseName(info.title);
+    const trimmed = customFilename.trim();
+    if (!trimmed) {
+      setFilenameSubmitWarning(
+        `No filename entered — will use: ${sanitizedFallbackTitle}`,
+      );
+    } else {
+      setFilenameSubmitWarning(null);
+    }
 
     const prefs = settings.downloadPreferences;
     const maxSec = prefs.maxDurationSeconds ?? ABSOLUTE_MAX_DURATION_SECONDS;
@@ -107,11 +160,12 @@ export default function App() {
       outputDir,
       bitrate,
       duration: info.duration,
+      outputFilename: trimmed || undefined,
     });
   };
 
   return (
-    <div className="min-h-screen bg-primary-50 p-6 dark:bg-gray-900">
+    <div className="min-h-screen bg-primary-100 p-6 dark:bg-gray-900">
       <div className="mx-auto max-w-2xl space-y-6">
         <header className="flex items-start justify-between">
           <div>
@@ -196,7 +250,7 @@ export default function App() {
           hidden={activeTab !== "single"}
           className="mt-4 space-y-6"
         >
-          <UrlInput onSubmit={fetchInfo} loading={infoLoading} />
+          <UrlInput onSubmit={handleFetchInfo} loading={infoLoading} />
 
           {infoError && (
             <p
@@ -241,26 +295,29 @@ export default function App() {
             </p>
           )}
 
-          {capabilities.canPreview && audioUrl && info && !isVideoFormat(format) && (
-            <div className="space-y-3 rounded-lg border border-primary-200 bg-primary-50 p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                Preview & Trim
-              </h3>
-              <AudioPreview
-                audioUrl={audioUrl}
-                duration={info.duration}
-                start={trimStart}
-                end={trimEnd}
-                onTrimChange={handleTrimChange}
-              />
-              <TrimControls
-                start={trimStart}
-                end={trimEnd}
-                duration={info.duration}
-                onChange={handleTrimChange}
-              />
-            </div>
-          )}
+          {capabilities.canPreview &&
+            audioUrl &&
+            info &&
+            !isVideoFormat(format) && (
+              <div className="space-y-3 rounded-lg border border-primary-200 bg-primary-50 p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                  Preview & Trim
+                </h3>
+                <AudioPreview
+                  audioUrl={audioUrl}
+                  duration={info.duration}
+                  start={trimStart}
+                  end={trimEnd}
+                  onTrimChange={handleTrimChange}
+                />
+                <TrimControls
+                  start={trimStart}
+                  end={trimEnd}
+                  duration={info.duration}
+                  onChange={handleTrimChange}
+                />
+              </div>
+            )}
 
           {info && (
             <div className="space-y-4 rounded-lg border border-primary-200 bg-primary-50 p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
@@ -271,8 +328,16 @@ export default function App() {
                   onChange={setResolution}
                 />
               )}
+              <FilenameInput
+                value={customFilename}
+                extension={format}
+                onChange={setCustomFilename}
+                invalidCharsWarning={filenameInvalidCharsWarning}
+                emptyHint={filenameEmptyHint}
+                emptyOnDownloadWarning={filenameSubmitWarning}
+              />
               {capabilities.canBrowseFolder && (
-              <OutputFolder value={outputDir} onChange={setOutputDir} />
+                <OutputFolder value={outputDir} onChange={setOutputDir} />
               )}
               {durationError && (
                 <p

@@ -90,7 +90,7 @@ export function AudioPreview({
         type="button"
         onClick={handlePlayPause}
         aria-label={playing ? "Pause" : "Play"}
-        className="cursor-pointer self-start rounded bg-primary-300 px-3 py-1 text-sm text-white hover:bg-primary-400"
+        className="cursor-pointer self-start rounded bg-primary-600 px-3 py-1 text-sm text-white hover:bg-primary-700"
       >
         {playing ? (
           <PauseIcon className="inline" />

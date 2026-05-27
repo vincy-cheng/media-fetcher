@@ -159,41 +159,44 @@ pub async fn run_ytdlp(
                 Ok::<_, std::io::Error>(buf)
             });
 
-            let wait_task = tokio::spawn(async move {
-                child.wait().await
-            });
-
-            let result = tokio::select! {
-                result = async {
-                    let (stdout_res, stderr_res, status_res) = tokio::join!(stdout_task, stderr_task, wait_task);
-                    let stdout_buf = stdout_res
-                        .map_err(|e| format!("stdout task error: {e}"))?
-                        .map_err(|e| format!("stdout read error: {e}"))?;
-                    let stderr_buf = stderr_res
-                        .map_err(|e| format!("stderr task error: {e}"))?
-                        .map_err(|e| format!("stderr read error: {e}"))?;
-                    let status = status_res
-                        .map_err(|e| format!("wait task error: {e}"))?
-                        .map_err(|e| format!("wait error: {e}"))?;
-                    Ok::<_, String>((status, stdout_buf, stderr_buf))
-                } => {
-                    match result {
-                        Ok((status, stdout_buf, stderr_buf)) => {
-                            if status.success() {
-                                Ok(String::from_utf8_lossy(&stdout_buf).to_string())
-                            } else {
-                                Err(String::from_utf8_lossy(&stderr_buf).to_string())
-                            }
-                        }
-                        Err(e) => Err(format!("yt-dlp override error: {e}")),
+            let cancelled = async {
+                if *cancel_rx.borrow() {
+                    return;
+                }
+                while cancel_rx.changed().await.is_ok() {
+                    if *cancel_rx.borrow() {
+                        return;
                     }
                 }
-                _ = cancel_rx.wait_for(|v| *v) => {
-                    // Process is already running in tasks, cancellation will naturally abort
-                    Err("cancelled".to_string())
+            };
+
+            let status = tokio::select! {
+                status = child.wait() => {
+                    status.map_err(|e| format!("wait error: {e}"))?
+                }
+                _ = cancelled => {
+                    let _ = child.kill().await;
+                    let _ = child.wait().await;
+                    let _ = stdout_task.await;
+                    let _ = stderr_task.await;
+                    return Err("cancelled".to_string());
                 }
             };
-            return result;
+
+            let stdout_buf = stdout_task
+                .await
+                .map_err(|e| format!("stdout task error: {e}"))?
+                .map_err(|e| format!("stdout read error: {e}"))?;
+            let stderr_buf = stderr_task
+                .await
+                .map_err(|e| format!("stderr task error: {e}"))?
+                .map_err(|e| format!("stderr read error: {e}"))?;
+
+            return if status.success() {
+                Ok(String::from_utf8_lossy(&stdout_buf).to_string())
+            } else {
+                Err(String::from_utf8_lossy(&stderr_buf).to_string())
+            };
         }
     }
 
@@ -281,5 +284,3 @@ pub async fn run_ffmpeg(
         }
     }
 }
-
-

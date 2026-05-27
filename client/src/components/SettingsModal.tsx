@@ -80,6 +80,9 @@ export function SettingsModal({
   );
   const [outputDir, setOutputDir] = useState(prefs.defaultOutputDir);
   const [bitrate, setBitrate] = useState<Bitrate>(prefs.defaultBitrate);
+  const [autoOpenPreview, setAutoOpenPreview] = useState<boolean>(
+    prefs.autoOpenPreview ?? false,
+  );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [picking, setPicking] = useState(false);
@@ -116,6 +119,7 @@ export function SettingsModal({
           defaultResolution: resolution,
           defaultOutputDir: outputDir,
           defaultBitrate: bitrate,
+          autoOpenPreview,
           maxDurationSeconds:
             maxDurationMinutes.trim() !== "" && Number(maxDurationMinutes) > 0
               ? Number(maxDurationMinutes) * 60
@@ -251,32 +255,32 @@ export function SettingsModal({
 
               {/* Default Output Folder */}
               {capabilities.canBrowseFolder && (
-              <div className="flex flex-col gap-1.5">
-                <label
-                  htmlFor="outputDir"
-                  className="text-sm font-medium text-gray-700 dark:text-gray-300"
-                >
-                  Default Output Folder
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    id="outputDir"
-                    type="text"
-                    value={outputDir}
-                    onChange={(e) => setOutputDir(e.target.value)}
-                    placeholder="/Users/you/Downloads"
-                    className="flex-1 rounded-md border border-primary-200 bg-primary-50 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleBrowse}
-                    disabled={picking}
-                    className="cursor-pointer rounded-md bg-primary-600 px-3 py-2 text-sm text-white hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+                <div className="flex flex-col gap-1.5">
+                  <label
+                    htmlFor="outputDir"
+                    className="text-sm font-medium text-gray-700 dark:text-gray-300"
                   >
-                    Browse
-                  </button>
+                    Default Output Folder
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      id="outputDir"
+                      type="text"
+                      value={outputDir}
+                      onChange={(e) => setOutputDir(e.target.value)}
+                      placeholder="/Users/you/Downloads"
+                      className="flex-1 rounded-md border border-primary-200 bg-primary-50 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleBrowse}
+                      disabled={picking}
+                      className="cursor-pointer rounded-md bg-primary-600 px-3 py-2 text-sm text-white hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+                    >
+                      Browse
+                    </button>
+                  </div>
                 </div>
-              </div>
               )}
 
               {/* Default Bitrate (lossy audio formats only) */}
@@ -330,6 +334,30 @@ export function SettingsModal({
                     minutes
                   </span>
                 </div>
+
+                {/* Auto-open preview */}
+                {capabilities.canPreview && (
+                  <div className="flex items-center gap-3">
+                    <input
+                      id="autoOpenPreview"
+                      type="checkbox"
+                      checked={autoOpenPreview}
+                      onChange={(e) => setAutoOpenPreview(e.target.checked)}
+                      className="h-4 w-4 shrink-0 cursor-pointer rounded border-primary-300 text-primary-600 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-800"
+                    />
+                    <div className="space-y-0.5 leading-tight">
+                      <label
+                        htmlFor="autoOpenPreview"
+                        className="cursor-pointer text-sm font-medium text-gray-700 dark:text-gray-300"
+                      >
+                        Auto-open Preview after Fetch
+                      </label>
+                      <p className="text-xs text-gray-400 dark:text-gray-500">
+                        Automatically open Preview & Trim when a URL is fetched.
+                      </p>
+                    </div>
+                  </div>
+                )}
                 <p className="text-xs text-gray-400 dark:text-gray-500">
                   Leave empty for no custom limit (absolute max: 3 hours).
                 </p>
@@ -387,31 +415,31 @@ export function SettingsModal({
                   </p>
                 </div>
                 {capabilities.canUpdate && (
-                <div className="flex flex-col items-end gap-1">
-                  {!updating && (
-                    <button
-                      type="button"
-                      onClick={onCheckForUpdate}
-                      disabled={checkingUpdate}
-                      className="cursor-pointer text-xs text-blue-600 hover:underline disabled:opacity-50 dark:text-blue-400"
-                    >
-                      {checkingUpdate
-                        ? "Checking…"
-                        : latestVersion
-                          ? `Latest: v${latestVersion}`
-                          : "Check for update"}
-                    </button>
-                  )}
-                  {updateAvailable && !updating && (
-                    <button
-                      type="button"
-                      onClick={onStartUpdate}
-                      className="cursor-pointer rounded bg-blue-600 px-2 py-0.5 text-xs text-white hover:bg-blue-700"
-                    >
-                      Update to v{latestVersion}
-                    </button>
-                  )}
-                </div>
+                  <div className="flex flex-col items-end gap-1">
+                    {!updating && (
+                      <button
+                        type="button"
+                        onClick={onCheckForUpdate}
+                        disabled={checkingUpdate}
+                        className="cursor-pointer text-xs text-blue-600 hover:underline disabled:opacity-50 dark:text-blue-400"
+                      >
+                        {checkingUpdate
+                          ? "Checking…"
+                          : latestVersion
+                            ? `Latest: v${latestVersion}`
+                            : "Check for update"}
+                      </button>
+                    )}
+                    {updateAvailable && !updating && (
+                      <button
+                        type="button"
+                        onClick={onStartUpdate}
+                        className="cursor-pointer rounded bg-blue-600 px-2 py-0.5 text-xs text-white hover:bg-blue-700"
+                      >
+                        Update to v{latestVersion}
+                      </button>
+                    )}
+                  </div>
                 )}
               </div>
 

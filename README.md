@@ -6,6 +6,12 @@ Built with **Tauri 2** (Rust backend) + **React + Vite** (frontend).
 
 ---
 
+## Preview
+
+![Media Fetcher App Preview](assets/app-preview.png)
+
+---
+
 ## Features
 
 - 🎵 Download audio as **mp3, m4a, wav, ogg, or flac**
@@ -15,6 +21,7 @@ Built with **Tauri 2** (Rust backend) + **React + Vite** (frontend).
 - 👁 **Audio preview** — WaveSurfer.js waveform before downloading
 - 📁 **Native folder picker** — via Tauri dialog plugin
 - 📋 **Live job queue** — per-download progress tracking
+- ✏️ **Editable output filename** — customize base filename in single-download mode; backend sanitizes and falls back to video title if empty
 - ⚙️ **Persistent settings** — default format, bitrate, and output folder saved to app config
 - 🌙 **Dark mode**
 - 🖥 **Three modes** — Desktop app, Web UI, or CLI

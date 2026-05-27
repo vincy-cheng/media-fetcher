@@ -2,10 +2,12 @@ import { execFile } from 'child_process'
 import { promisify } from 'util'
 import path from 'path'
 import fs from 'fs'
+import { randomUUID } from 'crypto'
 import type { VideoInfo, DownloadOptions } from './types'
 import { isVideoFormat } from './types'
 
 const execFileAsync = promisify(execFile)
+const ABSOLUTE_MAX_DURATION_SECONDS = 10_800
 
 function resolveBin(envVar: string, name: string): string {
   if (process.env[envVar]) return process.env[envVar]!
@@ -23,6 +25,10 @@ function resolveBin(envVar: string, name: string): string {
 
 export const YTDLP = resolveBin('YTDLP_BIN', 'yt-dlp')
 export const FFMPEG = resolveBin('FFMPEG_BIN', 'ffmpeg')
+
+function sanitizeFilenameBaseName(name: string): string {
+  return name.replace(/[^\p{L}\p{N} \-_.]/gu, '_').trim()
+}
 
 export async function getVideoInfo(url: string): Promise<VideoInfo> {
   const { stdout } = await execFileAsync(YTDLP, [
@@ -44,11 +50,17 @@ export async function downloadAudio(
   onProgress?: (pct: number, stage: string) => void,
   signal?: AbortSignal,
 ): Promise<string> {
-  const { url, format, resolution, start, end, outputDir } = options
+  const { url, format, resolution, start, end, outputDir, bitrate, duration, outputFilename } = options
   const os = await import('os')
-  const path = await import('path')
 
-  const tmpTemplate = path.join(os.tmpdir(), `ytdl_${Date.now()}.%(ext)s`)
+  if (typeof duration === 'number' && duration > 0 && duration > ABSOLUTE_MAX_DURATION_SECONDS) {
+    throw new Error(
+      `Video duration (${formatTime(duration)}) exceeds the maximum allowed length of 3 hours`,
+    )
+  }
+
+  const tempPrefix = `ytdl_dl_${Date.now()}_${randomUUID()}`
+  const tmpTemplate = path.join(os.tmpdir(), `${tempPrefix}.%(ext)s`)
   onProgress?.(0, 'downloading')
 
   const ytFormat = isVideoFormat(format)
@@ -68,18 +80,22 @@ export async function downloadAudio(
 
   onProgress?.(50, 'converting')
 
-  // Find actual downloaded file
-  const fs = await import('fs')
-  const tmpFiles = fs.readdirSync(os.tmpdir()).filter((f: string) => f.startsWith('ytdl_'))
-  const rawFile = tmpFiles.length ? path.join(os.tmpdir(), tmpFiles[tmpFiles.length - 1]) : null
-  if (!rawFile) throw new Error('Downloaded file not found')
+  const rawFile = findDownloadedTempFile(os.tmpdir(), tempPrefix)
 
-  // Get title
-  const { stdout: titleOut } = await execFileAsync(YTDLP, [
-    '--get-title', '--no-playlist', '--no-warnings', url,
-  ], { signal })
-  const title = titleOut.trim().replace(/[^\p{L}\p{N} \-_.]/gu, '_')
-  const outPath = path.join(outputDir, `${title}.${format}`)
+  // Resolve output base name: custom filename takes precedence, fallback to yt-dlp title
+  const providedBaseName = outputFilename ? sanitizeFilenameBaseName(outputFilename) : ''
+
+  let baseName = providedBaseName
+  if (!baseName) {
+    // No custom filename provided, fetch title with yt-dlp
+    const { stdout: titleOut } = await execFileAsync(YTDLP, [
+      '--get-title', '--no-playlist', '--no-warnings', url,
+    ], { signal })
+    baseName = sanitizeFilenameBaseName(titleOut)
+  }
+  if (!baseName) baseName = 'audio'
+
+  const outPath = path.join(outputDir, `${baseName}.${format}`)
 
   const ffmpegArgs: string[] = ['-y', '-i', rawFile]
   if (start !== undefined) ffmpegArgs.push('-ss', formatTime(start))
@@ -93,22 +109,27 @@ export async function downloadAudio(
       ffmpegArgs.push('-c:v', 'libvpx-vp9', '-c:a', 'libopus')
     }
   } else {
+    const lossyBitrate = bitrate ?? 192
     const codecMap: Record<string, string[]> = {
-      mp3: ['-acodec', 'libmp3lame', '-q:a', '2'],
-      m4a: ['-acodec', 'aac'],
+      mp3: ['-acodec', 'libmp3lame', '-b:a', `${lossyBitrate}k`],
+      m4a: ['-acodec', 'aac', '-b:a', `${lossyBitrate}k`],
       wav: ['-acodec', 'pcm_s16le'],
-      ogg: ['-acodec', 'libvorbis'],
+      ogg: ['-acodec', 'libvorbis', '-b:a', `${lossyBitrate}k`],
       flac: ['-acodec', 'flac'],
     }
     ffmpegArgs.push(...(codecMap[format] ?? []))
   }
   ffmpegArgs.push(outPath)
 
-  await execFileAsync(FFMPEG, ffmpegArgs, { signal })
-  fs.unlinkSync(rawFile)
-
-  onProgress?.(100, 'complete')
-  return outPath
+  try {
+    await execFileAsync(FFMPEG, ffmpegArgs, { signal })
+    onProgress?.(100, 'complete')
+    return outPath
+  } catch (error) {
+    throw error
+  } finally {
+    cleanupDownloadedTempFile(rawFile)
+  }
 }
 
 function formatTime(secs: number): string {
@@ -116,4 +137,22 @@ function formatTime(secs: number): string {
   const m = Math.floor((secs % 3600) / 60)
   const s = Math.floor(secs % 60)
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+}
+
+function findDownloadedTempFile(tmpDir: string, prefix: string): string {
+  const matches = fs.readdirSync(tmpDir)
+    .filter((name) => name.startsWith(prefix))
+    .sort()
+  if (matches.length === 0) {
+    throw new Error('Downloaded file not found')
+  }
+  return path.join(tmpDir, matches[matches.length - 1]!)
+}
+
+export function cleanupDownloadedTempFile(rawFile: string): void {
+  try {
+    fs.unlinkSync(rawFile)
+  } catch (cleanupError) {
+    console.error(`Failed to remove temporary file: ${rawFile}`, cleanupError)
+  }
 }

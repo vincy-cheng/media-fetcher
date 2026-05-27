@@ -1,7 +1,7 @@
 import { useState } from "react";
 
 interface UrlInputProps {
-  onSubmit: (url: string) => void;
+  onSubmit: (url: string) => void | Promise<void>;
   loading?: boolean;
 }
 

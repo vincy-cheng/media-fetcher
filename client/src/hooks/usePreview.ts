@@ -42,5 +42,16 @@ export function usePreview() {
     setError(null)
   }, [])
 
-  return { audioUrl, loading, error, load, cancel }
+  const reset = useCallback(() => {
+    cancelledRef.current = true
+    setLoading(false)
+    setError(null)
+    setAudioUrl(null)
+    if (blobUrlRef.current) {
+      URL.revokeObjectURL(blobUrlRef.current)
+      blobUrlRef.current = null
+    }
+  }, [])
+
+  return { audioUrl, loading, error, load, cancel, reset }
 }
