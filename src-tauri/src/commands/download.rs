@@ -10,6 +10,45 @@ use crate::utils::{
 /// Absolute maximum video duration (3 hours). Enforced regardless of user settings.
 const ABSOLUTE_MAX_DURATION_SECONDS: f64 = 10_800.0;
 
+/// Resolves the output base name using filename resolution logic:
+/// 1. Custom filename if provided and non-empty (after sanitization)
+/// 2. Title fetched via yt-dlp
+/// 3. Fallback to "audio" if both fail
+async fn resolve_output_base_name(
+    app: &AppHandle,
+    cancel_rx: watch::Receiver<bool>,
+    cookie_config: &Option<CookieConfig>,
+    url: &str,
+    output_filename: Option<&str>,
+) -> Result<String, String> {
+    let provided = output_filename.unwrap_or("").trim();
+    let sanitized_provided = sanitize_filename(provided);
+    if !sanitized_provided.is_empty() {
+        return Ok(sanitized_provided);
+    }
+
+    let mut title_args = vec![
+        "--get-title".to_string(),
+        "--no-playlist".to_string(),
+        "--no-warnings".to_string(),
+    ];
+    title_args.extend(cookie_args(cookie_config));
+    title_args.push(url.to_string());
+
+    match run_ytdlp(app, title_args, cancel_rx).await {
+        Ok(title_stdout) => {
+            let title = sanitize_filename(title_stdout.trim());
+            if title.is_empty() {
+                Ok("audio".to_string())
+            } else {
+                Ok(title)
+            }
+        }
+        Err(e) if e == "cancelled" => Err("cancelled".to_string()),
+        Err(_) => Ok("audio".to_string()),
+    }
+}
+
 #[tauri::command]
 pub async fn cancel_download(
     job_id: String,
@@ -33,6 +72,7 @@ pub async fn download_media(
     start: Option<f64>,
     end: Option<f64>,
     output_dir: String,
+    output_filename: Option<String>,
     cookie_config: Option<CookieConfig>,
     bitrate: Option<u16>,
     duration: Option<f64>,
@@ -131,26 +171,14 @@ pub async fn download_media(
         message: format!("Converting to {format}…"),
     });
 
-    // Step 2: fetch video title for output filename
-    let mut title_args = vec![
-        "--get-title".to_string(),
-        "--no-playlist".to_string(),
-        "--no-warnings".to_string(),
-    ];
-    title_args.extend(cookie_args(&cookie_config));
-    title_args.push(url.clone());
-
-    let title_stdout = match run_ytdlp(&app, title_args, cancel_rx.clone()).await {
-        Ok(s) => s,
-        Err(e) if e == "cancelled" => {
-            let _ = std::fs::remove_file(&raw_file);
-            remove_from_registry(&registry, &job_id);
-            emit_cancelled(&app, &job_id);
-            return Err("cancelled".to_string());
-        }
-        Err(_) => "audio".to_string(), // title fetch failure is non-fatal
-    };
-    let title = sanitize_filename(title_stdout.trim());
+    // Step 2: resolve output base name (custom filename takes precedence)
+    let title = resolve_output_base_name(
+        &app,
+        cancel_rx.clone(),
+        &cookie_config,
+        &url,
+        output_filename.as_deref(),
+    ).await?;
 
     let output_path = PathBuf::from(&output_dir).join(format!("{title}.{format}"));
     let output_str = output_path.to_string_lossy().to_string();
@@ -298,6 +326,11 @@ mod tests {
     fn sanitize_filename_replaces_special_chars() {
         assert_eq!(sanitize_filename("Hello: World!"), "Hello_ World_");
         assert_eq!(sanitize_filename("  trim  "), "trim");
+    }
+
+    #[test]
+    fn sanitize_filename_can_be_empty_after_trim() {
+        assert_eq!(sanitize_filename("   "), "");
     }
 
     #[test]
