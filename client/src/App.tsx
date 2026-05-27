@@ -23,7 +23,10 @@ import { ABSOLUTE_MAX_DURATION_SECONDS, isVideoFormat } from "@/api/types";
 import { ResolutionSelector } from "@/components/ResolutionSelector";
 import { GearIcon, SunIcon, MoonIcon } from "@radix-ui/react-icons";
 import { capabilities } from "@/api/client";
-import { sanitizeFilenameBaseName, hasDisallowedFilenameChars } from "@/utils/filename";
+import {
+  sanitizeFilenameBaseName,
+  hasDisallowedFilenameChars,
+} from "@/utils/filename";
 
 type Tab = "single" | "batch";
 
@@ -63,7 +66,9 @@ export default function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [durationError, setDurationError] = useState<string | null>(null);
   const [customFilename, setCustomFilename] = useState("");
-  const [filenameSubmitWarning, setFilenameSubmitWarning] = useState<string | null>(null);
+  const [filenameSubmitWarning, setFilenameSubmitWarning] = useState<
+    string | null
+  >(null);
   const prefilled = useRef(false);
 
   useEffect(() => {
@@ -84,7 +89,9 @@ export default function App() {
     : null;
 
   const filenameEmptyHint =
-    trimmedCustomFilename.length === 0 ? "Leave empty to use the default title" : null;
+    trimmedCustomFilename.length === 0
+      ? "Leave empty to use the default title"
+      : null;
 
   const handleTrimChange = (s: number, e: number) => {
     setTrimStart(s);
@@ -158,7 +165,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-primary-50 p-6 dark:bg-gray-900">
+    <div className="min-h-screen bg-primary-100 p-6 dark:bg-gray-900">
       <div className="mx-auto max-w-2xl space-y-6">
         <header className="flex items-start justify-between">
           <div>
@@ -288,26 +295,29 @@ export default function App() {
             </p>
           )}
 
-          {capabilities.canPreview && audioUrl && info && !isVideoFormat(format) && (
-            <div className="space-y-3 rounded-lg border border-primary-200 bg-primary-50 p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                Preview & Trim
-              </h3>
-              <AudioPreview
-                audioUrl={audioUrl}
-                duration={info.duration}
-                start={trimStart}
-                end={trimEnd}
-                onTrimChange={handleTrimChange}
-              />
-              <TrimControls
-                start={trimStart}
-                end={trimEnd}
-                duration={info.duration}
-                onChange={handleTrimChange}
-              />
-            </div>
-          )}
+          {capabilities.canPreview &&
+            audioUrl &&
+            info &&
+            !isVideoFormat(format) && (
+              <div className="space-y-3 rounded-lg border border-primary-200 bg-primary-50 p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                  Preview & Trim
+                </h3>
+                <AudioPreview
+                  audioUrl={audioUrl}
+                  duration={info.duration}
+                  start={trimStart}
+                  end={trimEnd}
+                  onTrimChange={handleTrimChange}
+                />
+                <TrimControls
+                  start={trimStart}
+                  end={trimEnd}
+                  duration={info.duration}
+                  onChange={handleTrimChange}
+                />
+              </div>
+            )}
 
           {info && (
             <div className="space-y-4 rounded-lg border border-primary-200 bg-primary-50 p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
@@ -327,7 +337,7 @@ export default function App() {
                 emptyOnDownloadWarning={filenameSubmitWarning}
               />
               {capabilities.canBrowseFolder && (
-              <OutputFolder value={outputDir} onChange={setOutputDir} />
+                <OutputFolder value={outputDir} onChange={setOutputDir} />
               )}
               {durationError && (
                 <p
