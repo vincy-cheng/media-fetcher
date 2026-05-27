@@ -26,6 +26,10 @@ function resolveBin(envVar: string, name: string): string {
 export const YTDLP = resolveBin('YTDLP_BIN', 'yt-dlp')
 export const FFMPEG = resolveBin('FFMPEG_BIN', 'ffmpeg')
 
+function sanitizeFilenameBaseName(name: string): string {
+  return name.replace(/[^\p{L}\p{N} \-_.]/gu, '_').trim()
+}
+
 export async function getVideoInfo(url: string): Promise<VideoInfo> {
   const { stdout } = await execFileAsync(YTDLP, [
     '--dump-json', '--no-playlist', '--no-warnings', url,
@@ -46,7 +50,7 @@ export async function downloadAudio(
   onProgress?: (pct: number, stage: string) => void,
   signal?: AbortSignal,
 ): Promise<string> {
-  const { url, format, resolution, start, end, outputDir, bitrate, duration } = options
+  const { url, format, resolution, start, end, outputDir, bitrate, duration, outputFilename } = options
   const os = await import('os')
 
   if (typeof duration === 'number' && duration > 0 && duration > ABSOLUTE_MAX_DURATION_SECONDS) {
@@ -78,12 +82,20 @@ export async function downloadAudio(
 
   const rawFile = findDownloadedTempFile(os.tmpdir(), tempPrefix)
 
-  // Get title
-  const { stdout: titleOut } = await execFileAsync(YTDLP, [
-    '--get-title', '--no-playlist', '--no-warnings', url,
-  ], { signal })
-  const title = titleOut.trim().replace(/[^\p{L}\p{N} \-_.]/gu, '_')
-  const outPath = path.join(outputDir, `${title}.${format}`)
+  // Resolve output base name: custom filename takes precedence, fallback to yt-dlp title
+  const providedBaseName = outputFilename ? sanitizeFilenameBaseName(outputFilename) : ''
+
+  let baseName = providedBaseName
+  if (!baseName) {
+    // No custom filename provided, fetch title with yt-dlp
+    const { stdout: titleOut } = await execFileAsync(YTDLP, [
+      '--get-title', '--no-playlist', '--no-warnings', url,
+    ], { signal })
+    baseName = sanitizeFilenameBaseName(titleOut)
+  }
+  if (!baseName) baseName = 'audio'
+
+  const outPath = path.join(outputDir, `${baseName}.${format}`)
 
   const ffmpegArgs: string[] = ['-y', '-i', rawFile]
   if (start !== undefined) ffmpegArgs.push('-ss', formatTime(start))
