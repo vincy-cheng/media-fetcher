@@ -10,6 +10,7 @@ import { JobQueue } from "@/components/JobQueue";
 import { SettingsModal } from "@/components/SettingsModal";
 import { BatchDownload } from "@/components/BatchDownload";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { FilenameInput } from "@/components/FilenameInput";
 import { useVideoInfo } from "@/hooks/useVideoInfo";
 import { usePreview } from "@/hooks/usePreview";
 import { useDownloadJob } from "@/hooks/useDownloadJob";
@@ -22,6 +23,7 @@ import { ABSOLUTE_MAX_DURATION_SECONDS, isVideoFormat } from "@/api/types";
 import { ResolutionSelector } from "@/components/ResolutionSelector";
 import { GearIcon, SunIcon, MoonIcon } from "@radix-ui/react-icons";
 import { capabilities } from "@/api/client";
+import { sanitizeFilenameBaseName, hasDisallowedFilenameChars } from "@/utils/filename";
 
 type Tab = "single" | "batch";
 
@@ -60,6 +62,8 @@ export default function App() {
   const [trimEnd, setTrimEnd] = useState(0);
   const [showSettings, setShowSettings] = useState(false);
   const [durationError, setDurationError] = useState<string | null>(null);
+  const [customFilename, setCustomFilename] = useState("");
+  const [filenameSubmitWarning, setFilenameSubmitWarning] = useState<string | null>(null);
   const prefilled = useRef(false);
 
   useEffect(() => {
@@ -71,6 +75,16 @@ export default function App() {
     setBitrate(prefs.defaultBitrate);
     if (prefs.defaultResolution) setResolution(prefs.defaultResolution);
   }, [loaded, settings]);
+
+  const hasInvalidFilenameChars = hasDisallowedFilenameChars(customFilename);
+  const trimmedCustomFilename = customFilename.trim();
+
+  const filenameInvalidCharsWarning = hasInvalidFilenameChars
+    ? "Some characters will be replaced with '_'"
+    : null;
+
+  const filenameEmptyHint =
+    trimmedCustomFilename.length === 0 ? "Leave empty to use the default title" : null;
 
   const handleTrimChange = (s: number, e: number) => {
     setTrimStart(s);
@@ -88,7 +102,11 @@ export default function App() {
     resetPreview();
     setTrimStart(0);
     setTrimEnd(0);
+    setFilenameSubmitWarning(null);
     const data = await fetchInfo(url);
+    if (data) {
+      setCustomFilename(sanitizeFilenameBaseName(data.title));
+    }
     if (
       data &&
       capabilities.canPreview &&
@@ -105,6 +123,16 @@ export default function App() {
     if (!info) return;
     if (capabilities.canBrowseFolder && !outputDir) return;
     setDurationError(null);
+
+    const sanitizedFallbackTitle = sanitizeFilenameBaseName(info.title);
+    const trimmed = customFilename.trim();
+    if (!trimmed) {
+      setFilenameSubmitWarning(
+        `No filename entered — will use: ${sanitizedFallbackTitle}`,
+      );
+    } else {
+      setFilenameSubmitWarning(null);
+    }
 
     const prefs = settings.downloadPreferences;
     const maxSec = prefs.maxDurationSeconds ?? ABSOLUTE_MAX_DURATION_SECONDS;
@@ -125,6 +153,7 @@ export default function App() {
       outputDir,
       bitrate,
       duration: info.duration,
+      outputFilename: trimmed || undefined,
     });
   };
 
@@ -289,6 +318,14 @@ export default function App() {
                   onChange={setResolution}
                 />
               )}
+              <FilenameInput
+                value={customFilename}
+                extension={format}
+                onChange={setCustomFilename}
+                invalidCharsWarning={filenameInvalidCharsWarning}
+                emptyHint={filenameEmptyHint}
+                emptyOnDownloadWarning={filenameSubmitWarning}
+              />
               {capabilities.canBrowseFolder && (
               <OutputFolder value={outputDir} onChange={setOutputDir} />
               )}
