@@ -75,7 +75,7 @@ app.get('/api/tools/status', async (_req, res) => {
 })
 
 app.post('/api/download', async (req, res) => {
-  const { url, format, resolution, start, end, jobId, bitrate, duration } = req.body
+  const { url, format, resolution, start, end, jobId, bitrate, duration, outputFilename } = req.body
   if (!url || !format || !jobId) {
     return res.status(400).json({ error: 'url, format, and jobId are required' })
   }
@@ -91,7 +91,7 @@ app.post('/api/download', async (req, res) => {
 
   try {
     const outPath = await downloadAudio(
-      { url, format, resolution, start, end, outputDir: os.tmpdir(), bitrate, duration },
+      { url, format, resolution, start, end, outputDir: os.tmpdir(), bitrate, duration, outputFilename },
       (percent, stage) => { send({ jobId, percent, stage, message: `${stage} ${percent}%` }) },
       controller.signal,
     )

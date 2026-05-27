@@ -61,6 +61,7 @@ export class WebApiClient implements IApiClient {
         jobId,
         bitrate: options.bitrate ?? null,
         duration: options.duration ?? null,
+        outputFilename: options.outputFilename ?? null,
       }),
     })
 

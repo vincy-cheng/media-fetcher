@@ -26,6 +26,7 @@ export interface DownloadOptions {
   outputDir: string
   bitrate?: Bitrate
   duration?: number
+  outputFilename?: string
 }
 
 export interface JobProgress {
