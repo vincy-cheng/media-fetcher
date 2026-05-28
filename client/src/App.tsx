@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from "react";
-import { GearIcon, MoonIcon, SunIcon } from "@radix-ui/react-icons";
 import { capabilities } from "@/api/client";
 import { AudioPreview } from "@/components/AudioPreview";
 import { BatchDownload } from "@/components/BatchDownload";
@@ -9,11 +8,12 @@ import { JobQueue } from "@/components/JobQueue";
 import { OutputFolder } from "@/components/OutputFolder";
 import { ResolutionSelector } from "@/components/ResolutionSelector";
 import { SettingsModal } from "@/components/SettingsModal";
-import { ToolStatusBanner } from "@/components/ToolStatusBanner";
 import { TrimControls } from "@/components/TrimControls";
 import { UrlInput } from "@/components/UrlInput";
 import { VideoInfoCard } from "@/components/VideoInfoCard";
+import { AppHeader } from "@/components/app/AppHeader";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { AppTabs } from "@/components/app/AppTabs";
 import { useVideoInfo } from "@/hooks/useVideoInfo";
 import { usePreview } from "@/hooks/usePreview";
 import { useDownloadJob } from "@/hooks/useDownloadJob";
@@ -25,7 +25,6 @@ import { ABSOLUTE_MAX_DURATION_SECONDS, isVideoFormat } from "@/api/types";
 import {
   AppShellProvider,
   useAppShell,
-  type AppShellTab,
   type AppShellContextValue,
 } from "@/components/app/AppShellContext";
 import {
@@ -228,8 +227,6 @@ export default function App() {
   );
 }
 
-const APP_SHELL_TABS: AppShellTab[] = ["single", "batch"];
-
 /**
  * Renders the app shell using shared state from context.
  */
@@ -238,106 +235,11 @@ function AppShellLayout() {
     <div className="min-h-screen bg-primary-100 p-6 dark:bg-gray-900">
       <div className="mx-auto max-w-2xl space-y-6">
         <AppHeader />
-        <AppShellTabs />
+        <AppTabs />
         <SingleDownloadPanel />
         <BatchDownloadPanel />
       </div>
       <AppSettingsModal />
-    </div>
-  );
-}
-
-/**
- * Renders the shell header and global tool status affordances.
- */
-function AppHeader() {
-  const { dark, toggleDark, setShowSettings, toolStatus } = useAppShell();
-
-  return (
-    <>
-      <header className="flex items-start justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-            Media Fetcher
-          </h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            Download audio or video in multiple formats
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={() => setShowSettings(true)}
-            className="relative inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-primary-700 bg-primary-600 px-3 py-1.5 text-sm text-primary-50 hover:bg-primary-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
-            aria-label="Open settings"
-          >
-            <GearIcon />
-            Settings
-            {toolStatus.hasError && (
-              <span
-                className="absolute -right-1 -top-1 flex h-2.5 w-2.5 items-center justify-center rounded-full bg-red-500"
-                aria-label="Tool error"
-              />
-            )}
-          </button>
-          <button
-            type="button"
-            onClick={toggleDark}
-            className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-primary-700 bg-primary-600 px-3 py-1.5 text-sm text-primary-50 hover:bg-primary-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
-            aria-label="Toggle dark mode"
-          >
-            {dark ? (
-              <>
-                <SunIcon /> Light
-              </>
-            ) : (
-              <>
-                <MoonIcon /> Dark
-              </>
-            )}
-          </button>
-        </div>
-      </header>
-
-      {toolStatus.status && toolStatus.hasError && (
-        <ToolStatusBanner
-          status={toolStatus.status}
-          onOpenSettings={() => setShowSettings(true)}
-        />
-      )}
-    </>
-  );
-}
-
-/**
- * Renders the top-level shell tabs.
- */
-function AppShellTabs() {
-  const { activeTab, setActiveTab } = useAppShell();
-
-  return (
-    <div
-      className="flex gap-1 rounded-lg border border-primary-200 bg-primary-50 p-1 dark:border-gray-700 dark:bg-gray-800"
-      role="tablist"
-    >
-      {APP_SHELL_TABS.map((tab) => (
-        <button
-          key={tab}
-          id={`tab-${tab}`}
-          type="button"
-          onClick={() => setActiveTab(tab)}
-          role="tab"
-          aria-selected={activeTab === tab}
-          aria-controls={`tabpanel-${tab}`}
-          className={`flex-1 rounded-md py-1.5 text-sm font-medium transition-colors hover:cursor-pointer ${
-            activeTab === tab
-              ? "bg-primary-600 text-white"
-              : "text-gray-600 hover:bg-primary-100 dark:text-gray-300 dark:hover:bg-gray-700"
-          }`}
-        >
-          {tab === "single" ? "Single" : "Batch"}
-        </button>
-      ))}
     </div>
   );
 }
