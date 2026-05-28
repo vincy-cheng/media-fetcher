@@ -9,6 +9,7 @@ import { OutputFolder } from "@/components/OutputFolder";
 import { ResolutionSelector } from "@/components/ResolutionSelector";
 import { SettingsModal } from "@/components/SettingsModal";
 import { TrimControls } from "@/components/TrimControls";
+import { ToolStatusBanner } from "@/components/ToolStatusBanner";
 import { UrlInput } from "@/components/UrlInput";
 import { VideoInfoCard } from "@/components/VideoInfoCard";
 import { AppHeader } from "@/components/app/AppHeader";
@@ -231,10 +232,18 @@ export default function App() {
  * Renders the app shell using shared state from context.
  */
 function AppShellLayout() {
+  const { setShowSettings, toolStatus } = useAppShell();
+
   return (
     <div className="min-h-screen bg-primary-100 p-6 dark:bg-gray-900">
       <div className="mx-auto max-w-2xl space-y-6">
         <AppHeader />
+        {toolStatus.status && toolStatus.hasError && (
+          <ToolStatusBanner
+            status={toolStatus.status}
+            onOpenSettings={() => setShowSettings(true)}
+          />
+        )}
         <AppTabs />
         <SingleDownloadPanel />
         <BatchDownloadPanel />
