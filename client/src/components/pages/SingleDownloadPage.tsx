@@ -13,6 +13,7 @@ export function SingleDownloadPage() {
       id="tabpanel-single"
       aria-labelledby="tab-single"
       hidden={activeTab !== "single"}
+      className="mt-4"
     >
       <SingleDownloadSection />
     </div>

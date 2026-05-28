@@ -29,7 +29,7 @@ export function SingleDownloadSection() {
   } = useAppShell();
 
   return (
-    <div className="mt-4 space-y-6">
+    <div className="space-y-6">
       <UrlInput onSubmit={handleFetchInfo} loading={infoLoading} />
 
       {infoError && (
