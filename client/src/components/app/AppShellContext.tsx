@@ -1,7 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext } from "react";
 import type { Dispatch, PropsWithChildren, SetStateAction } from "react";
-import type { Capabilities } from "@/api/client";
 import type {
   AppSettings,
   Bitrate,
@@ -20,8 +19,7 @@ export interface AppShellContextValue {
   dark: boolean;
   toggleDark: () => void;
   showSettings: boolean;
-  openSettings: () => void;
-  closeSettings: () => void;
+  setShowSettings: Dispatch<SetStateAction<boolean>>;
   settings: AppSettings;
   settingsLoaded: boolean;
   saveSettings: (updated: AppSettings) => Promise<void>;
@@ -60,8 +58,9 @@ export interface AppShellContextValue {
   resetPreview: () => void;
   handleDownload: () => Promise<void>;
   cancelDownload: (jobId: string) => Promise<void>;
-  clearDownloads: () => void;
-  capabilities: Capabilities;
+  clearHistory: () => void;
+  canPreview: boolean;
+  canBrowseFolder: boolean;
   maxDurationSeconds: number | null;
 }
 
