@@ -57,6 +57,7 @@ export function SingleDownloadProvider({ children }: PropsWithChildren) {
     setTrimStart(0);
     setTrimEnd(0);
     setFilenameSubmitWarning(null);
+    setDurationError(null);
     const data = await fetchInfo(url);
     if (data) {
       setCustomFilename(sanitizeFilenameBaseName(data.title));
