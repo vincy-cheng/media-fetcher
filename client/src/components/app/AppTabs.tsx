@@ -1,4 +1,4 @@
-import { useAppShell, type AppShellTab } from "@/components/app/AppShellContext";
+import { useAppShell, type AppShellTab } from "@/providers/AppShellProvider";
 
 const APP_SHELL_TABS: AppShellTab[] = ["single", "batch"];
 

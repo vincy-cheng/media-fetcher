@@ -1,11 +1,13 @@
 import { GearIcon, MoonIcon, SunIcon } from "@radix-ui/react-icons";
-import { useAppShell } from "@/components/app/AppShellContext";
+import { useDarkModeContext } from "@/providers/DarkModeProvider";
+import { useAppShell } from "@/providers/AppShellProvider";
 
 /**
  * Renders the app shell header controls.
  */
 export function AppHeader() {
-  const { dark, toggleDark, setShowSettings, toolStatus } = useAppShell();
+  const { dark, toggleDark } = useDarkModeContext();
+  const { setShowSettings, toolStatus } = useAppShell();
 
   return (
     <header className="flex items-start justify-between">
