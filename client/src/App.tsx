@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef } from "react";
 import { capabilities } from "@/api/client";
-import { BatchDownload } from "@/components/BatchDownload";
 import { SettingsModal } from "@/components/SettingsModal";
 import { ToolStatusBanner } from "@/components/ToolStatusBanner";
 import { AppHeader } from "@/components/app/AppHeader";
 import { AppTabs } from "@/components/app/AppTabs";
+import { BatchDownloadPage } from "@/components/pages/BatchDownloadPage";
 import { SingleDownloadPage } from "@/components/pages/SingleDownloadPage";
 import { useVideoInfo } from "@/hooks/useVideoInfo";
 import { usePreview } from "@/hooks/usePreview";
@@ -223,7 +223,13 @@ export default function App() {
  * Renders the app shell using shared state from context.
  */
 function AppShellLayout() {
-  const { setShowSettings, toolStatus } = useAppShell();
+  const {
+    setShowSettings,
+    showSettings,
+    settings,
+    saveSettings,
+    toolStatus,
+  } = useAppShell();
 
   return (
     <div className="min-h-screen bg-primary-100 p-6 dark:bg-gray-900">
@@ -237,70 +243,25 @@ function AppShellLayout() {
         )}
         <AppTabs />
         <SingleDownloadPage />
-        <BatchDownloadPanel />
+        <BatchDownloadPage />
       </div>
-      <AppSettingsModal />
+      {showSettings && (
+        <SettingsModal
+          settings={settings}
+          onSave={saveSettings}
+          onClose={() => setShowSettings(false)}
+          toolStatus={toolStatus.status}
+          toolsChecking={toolStatus.checking}
+          latestVersion={toolStatus.latestVersion}
+          updateAvailable={toolStatus.updateAvailable}
+          checkingUpdate={toolStatus.checkingUpdate}
+          updating={toolStatus.updating}
+          updateProgress={toolStatus.updateProgress}
+          updateError={toolStatus.updateError}
+          onCheckForUpdate={toolStatus.checkForUpdate}
+          onStartUpdate={toolStatus.startUpdate}
+        />
+      )}
     </div>
-  );
-}
-
-/**
- * Renders the batch-download panel with context-provided defaults.
- */
-function BatchDownloadPanel() {
-  const {
-    activeTab,
-    format,
-    resolution,
-    bitrate,
-    outputDir,
-    maxDurationSeconds,
-  } = useAppShell();
-
-  return (
-    <div
-      role="tabpanel"
-      id="tabpanel-batch"
-      aria-labelledby="tab-batch"
-      hidden={activeTab !== "batch"}
-    >
-      <BatchDownload
-        defaultFormat={format}
-        defaultResolution={resolution}
-        defaultBitrate={bitrate}
-        defaultOutputDir={outputDir}
-        maxDurationSeconds={maxDurationSeconds}
-      />
-    </div>
-  );
-}
-
-/**
- * Renders the settings modal from context-backed state.
- */
-function AppSettingsModal() {
-  const { showSettings, settings, saveSettings, setShowSettings, toolStatus } =
-    useAppShell();
-
-  if (!showSettings) {
-    return null;
-  }
-
-  return (
-    <SettingsModal
-      settings={settings}
-      onSave={saveSettings}
-      onClose={() => setShowSettings(false)}
-      toolStatus={toolStatus.status}
-      toolsChecking={toolStatus.checking}
-      latestVersion={toolStatus.latestVersion}
-      updateAvailable={toolStatus.updateAvailable}
-      checkingUpdate={toolStatus.checkingUpdate}
-      updating={toolStatus.updating}
-      updateProgress={toolStatus.updateProgress}
-      updateError={toolStatus.updateError}
-      onCheckForUpdate={toolStatus.checkForUpdate}
-      onStartUpdate={toolStatus.startUpdate}
-    />
   );
 }

@@ -44,7 +44,8 @@ export function BatchDownload({
     clearAll,
   } = useBatchDownload();
   const [format, setFormat] = useState<Format>(defaultFormat);
-  const [resolution, setResolution] = useState<VideoResolution>(defaultResolution);
+  const [resolution, setResolution] =
+    useState<VideoResolution>(defaultResolution);
   const [bitrate] = useState<Bitrate>(defaultBitrate);
   const [outputDir, setOutputDir] = useState(defaultOutputDir);
   const [completedPage, setCompletedPage] = useState(1);
@@ -87,7 +88,13 @@ export function BatchDownload({
 
   const handleDownloadAll = () => {
     if (!canDownload) return;
-    downloadAll(format, isVideoFormat(format) ? resolution : undefined, bitrate, outputDir, maxDurationSeconds);
+    downloadAll(
+      format,
+      isVideoFormat(format) ? resolution : undefined,
+      bitrate,
+      outputDir,
+      maxDurationSeconds,
+    );
   };
 
   return (
@@ -130,7 +137,7 @@ export function BatchDownload({
         <ResolutionSelector value={resolution} onChange={setResolution} />
       )}
       {capabilities.canBrowseFolder && (
-      <OutputFolder value={outputDir} onChange={setOutputDir} />
+        <OutputFolder value={outputDir} onChange={setOutputDir} />
       )}
 
       <button
