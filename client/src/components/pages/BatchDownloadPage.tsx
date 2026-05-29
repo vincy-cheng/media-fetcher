@@ -1,18 +1,19 @@
 import { BatchDownload } from "@/components/BatchDownload";
-import { useAppShell } from "@/components/app/AppShellContext";
+import { useActiveTab } from "@/providers/ActiveTabProvider";
+import { useDownloadOptions } from "@/providers/DownloadOptionsProvider";
 
 /**
  * Renders the batch-download tab panel boundary with app shell defaults.
  */
 export function BatchDownloadPage() {
+  const { activeTab } = useActiveTab();
   const {
-    activeTab,
     format,
     resolution,
     bitrate,
     outputDir,
     maxDurationSeconds,
-  } = useAppShell();
+  } = useDownloadOptions();
 
   return (
     <div

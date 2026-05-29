@@ -1,11 +1,12 @@
 import { SingleDownloadSection } from "@/components/app/SingleDownloadSection";
-import { useAppShell } from "@/components/app/AppShellContext";
+import { SingleDownloadProvider } from "@/components/app/SingleDownloadProvider";
+import { useActiveTab } from "@/providers/ActiveTabProvider";
 
 /**
  * Renders the single-download tab panel boundary.
  */
 export function SingleDownloadPage() {
-  const { activeTab } = useAppShell();
+  const { activeTab } = useActiveTab();
 
   return (
     <div
@@ -15,7 +16,9 @@ export function SingleDownloadPage() {
       hidden={activeTab !== "single"}
       className="mt-4"
     >
-      <SingleDownloadSection />
+      <SingleDownloadProvider>
+        <SingleDownloadSection />
+      </SingleDownloadProvider>
     </div>
   );
 }
