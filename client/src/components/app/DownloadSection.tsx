@@ -2,30 +2,34 @@ import { FormatSelector } from "@/components/FormatSelector";
 import { ResolutionSelector } from "@/components/ResolutionSelector";
 import { FilenameInput } from "@/components/FilenameInput";
 import { OutputFolder } from "@/components/OutputFolder";
-import { useAppShell } from "@/components/app/AppShellContext";
+import { useVideoFetch } from "@/components/app/VideoFetchContext";
+import { useDownloadForm } from "@/components/app/DownloadFormContext";
+import { useDownloadOptions } from "@/providers/DownloadOptionsProvider";
 import { isVideoFormat } from "@/api/types";
 
 /**
  * Renders context-backed controls for a single download.
  */
 export function DownloadSection() {
+  const { info } = useVideoFetch();
   const {
-    info,
-    format,
-    setFormat,
-    resolution,
-    setResolution,
     customFilename,
     setCustomFilename,
     filenameInvalidCharsWarning,
     filenameEmptyHint,
     filenameSubmitWarning,
+    durationError,
+    handleDownload,
+  } = useDownloadForm();
+  const {
+    format,
+    setFormat,
+    resolution,
+    setResolution,
     canBrowseFolder,
     outputDir,
     setOutputDir,
-    durationError,
-    handleDownload,
-  } = useAppShell();
+  } = useDownloadOptions();
 
   if (!info) {
     return null;

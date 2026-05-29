@@ -1,14 +1,17 @@
 import { AudioPreview } from "@/components/AudioPreview";
 import { TrimControls } from "@/components/TrimControls";
-import { useAppShell } from "@/components/app/AppShellContext";
+import { useVideoFetch } from "@/components/app/VideoFetchContext";
+import { usePreviewContext } from "@/components/app/PreviewContext";
+import { useDownloadOptions } from "@/providers/DownloadOptionsProvider";
 import { isVideoFormat } from "@/api/types";
 
 /**
  * Renders preview and trim controls for audio downloads when previewing is available.
  */
 export function PreviewSection() {
-  const { canPreview, audioUrl, info, format, trimStart, trimEnd, setTrimRange } =
-    useAppShell();
+  const { info } = useVideoFetch();
+  const { audioUrl, trimStart, trimEnd, setTrimRange } = usePreviewContext();
+  const { canPreview, format } = useDownloadOptions();
 
   if (!canPreview || !audioUrl || !info || isVideoFormat(format)) {
     return null;
