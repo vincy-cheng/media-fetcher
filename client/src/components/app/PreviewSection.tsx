@@ -1,5 +1,6 @@
 import { AudioPreview } from "@/components/AudioPreview";
 import { TrimControls } from "@/components/TrimControls";
+import { Skeleton } from "@/components/ui/Skeleton";
 import { useVideoFetch } from "@/components/app/VideoFetchContext";
 import { usePreviewContext } from "@/components/app/PreviewContext";
 import { useDownloadOptions } from "@/providers/DownloadOptionsProvider";
@@ -7,15 +8,28 @@ import { isVideoFormat } from "@/api/types";
 
 /**
  * Renders preview and trim controls for audio downloads when previewing is available.
+ * Shows a skeleton placeholder while the preview is loading.
  */
 export function PreviewSection() {
   const { info } = useVideoFetch();
-  const { audioUrl, trimStart, trimEnd, setTrimRange } = usePreviewContext();
+  const { audioUrl, previewLoading, trimStart, trimEnd, setTrimRange } = usePreviewContext();
   const { canPreview, format } = useDownloadOptions();
 
-  if (!canPreview || !audioUrl || !info || isVideoFormat(format)) {
+  if (!canPreview || isVideoFormat(format) || (!previewLoading && !audioUrl)) {
     return null;
   }
+
+  if (previewLoading) {
+    return (
+      <div className="space-y-3 rounded-lg border border-primary-200 bg-primary-50 p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+        <Skeleton className="h-4 w-28 dark:bg-gray-700" />
+        <Skeleton className="h-12 w-full dark:bg-gray-700" />
+        <Skeleton className="h-8 w-full dark:bg-gray-700" />
+      </div>
+    );
+  }
+
+  if (!info || !audioUrl) return null;
 
   return (
     <div className="space-y-3 rounded-lg border border-primary-200 bg-primary-50 p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
