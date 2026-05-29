@@ -1,12 +1,12 @@
 import { SingleDownloadSection } from "@/components/app/SingleDownloadSection";
 import { SingleDownloadProvider } from "@/components/app/SingleDownloadProvider";
-import { useActiveTab } from "@/providers/ActiveTabProvider";
+import { useAppShell } from "@/providers/AppShellProvider";
 
 /**
  * Renders the single-download tab panel boundary.
  */
 export function SingleDownloadPage() {
-  const { activeTab } = useActiveTab();
+  const { activeTab } = useAppShell();
 
   return (
     <div
