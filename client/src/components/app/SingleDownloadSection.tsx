@@ -3,30 +3,21 @@ import { UrlInput } from "@/components/UrlInput";
 import { VideoInfoCard } from "@/components/VideoInfoCard";
 import { PreviewSection } from "@/components/app/PreviewSection";
 import { DownloadSection } from "@/components/app/DownloadSection";
-import { useAppShell } from "@/components/app/AppShellContext";
+import { useVideoFetch } from "@/components/app/VideoFetchContext";
+import { usePreviewContext } from "@/components/app/PreviewContext";
+import { useJobQueue } from "@/components/app/JobQueueContext";
+import { useDownloadOptions } from "@/providers/DownloadOptionsProvider";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { isVideoFormat } from "@/api/types";
 
 /**
- * Renders the single-download workflow body from app shell context.
+ * Renders the single-download workflow body from focused context hooks.
  */
 export function SingleDownloadSection() {
-  const {
-    handleFetchInfo,
-    infoLoading,
-    infoError,
-    info,
-    handlePreview,
-    cancelPreview,
-    previewLoading,
-    canPreview,
-    format,
-    previewError,
-    jobs,
-    history,
-    clearHistory,
-    cancelDownload,
-  } = useAppShell();
+  const { handleFetchInfo, infoLoading, infoError, info } = useVideoFetch();
+  const { handlePreview, cancelPreview, previewLoading, previewError } = usePreviewContext();
+  const { jobs, history, clearHistory, cancelDownload } = useJobQueue();
+  const { format, canPreview } = useDownloadOptions();
 
   return (
     <div className="space-y-6">
