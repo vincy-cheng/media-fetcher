@@ -61,6 +61,7 @@ export function SingleDownloadProvider({ children }: PropsWithChildren) {
     const data = await fetchInfo(url);
     if (data) {
       setCustomFilename(sanitizeFilenameBaseName(data.title));
+      setTrimEnd(data.duration);
     }
     if (
       data &&
@@ -69,7 +70,6 @@ export function SingleDownloadProvider({ children }: PropsWithChildren) {
       settings.downloadPreferences.autoOpenPreview
     ) {
       setTrimStart(0);
-      setTrimEnd(data.duration);
       await loadPreview(data.url);
     }
   };
