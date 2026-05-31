@@ -353,7 +353,7 @@ export function SettingsModal({
                         Auto-open Preview after Fetch
                       </label>
                       <p className="text-xs text-gray-400 dark:text-gray-500">
-                        Automatically open Preview & Trim when a URL is fetched.
+                        Automatically open the audio waveform preview when a URL is fetched.
                       </p>
                     </div>
                   </div>

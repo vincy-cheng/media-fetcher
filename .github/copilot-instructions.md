@@ -57,6 +57,14 @@ Each download gets a UUID `jobId`. A `tokio::sync::watch` channel is created per
 
 ---
 
+## Git Conventions
+
+- **No co-authors** in any commit. Never add `Co-authored-by:` trailers.
+- Commit messages follow Conventional Commits: `<type>(<scope>): <subject>`
+- Branch format: `<type>/<issue-number>-<description>` (e.g. `feat/42-batch-download`)
+
+---
+
 ## Commands
 
 ### Setup

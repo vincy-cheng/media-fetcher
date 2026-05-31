@@ -23,7 +23,7 @@ function parseTime(t: string): number {
 export async function run(urls: string[], opts: CliOpts) {
   if (urls.length === 0) {
     const { url } = await inquirer.prompt([
-      { type: 'input', name: 'url', message: 'YouTube URL:' },
+      { type: 'input', name: 'url', message: 'URL:' },
     ])
     urls = [url]
   }
