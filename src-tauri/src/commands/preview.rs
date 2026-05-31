@@ -3,7 +3,7 @@ use tauri::AppHandle;
 use crate::utils::{
     sidecar::{run_ytdlp, cookie_args},
     types::CookieConfig,
-    validation::is_valid_youtube_url,
+    validation::is_valid_url,
 };
 
 /// Downloads audio-only to a temp file and returns the file path.
@@ -14,8 +14,8 @@ pub async fn extract_preview_audio(
     url: String,
     cookie_config: Option<CookieConfig>,
 ) -> Result<String, String> {
-    if !is_valid_youtube_url(&url) {
-        return Err("Invalid YouTube URL".to_string());
+    if !is_valid_url(&url) {
+        return Err("Invalid URL".to_string());
     }
 
     let tmp_dir = std::env::temp_dir();
@@ -24,7 +24,7 @@ pub async fn extract_preview_audio(
     let tmp_path_str = tmp_path.to_str().unwrap_or("/tmp/ytdl_preview.%(ext)s").to_string();
 
     let mut args = vec![
-        "-f".to_string(), "bestaudio".to_string(),
+        "-f".to_string(), "bestaudio/best".to_string(),
         "--no-playlist".to_string(),
         "--no-warnings".to_string(),
         "-o".to_string(), tmp_path_str,

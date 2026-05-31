@@ -66,9 +66,9 @@ export async function downloadAudio(
   const ytFormat = isVideoFormat(format)
     ? (() => {
         const height = parseInt((resolution ?? '1080p').replace('p', ''), 10)
-        return `bestvideo[height<=${height}]+bestaudio/best[height<=${height}]`
+        return `bestvideo[height<=${height}]+bestaudio/best[height<=${height}]/best`
       })()
-    : 'bestaudio'
+    : 'bestaudio/best'
 
   await execFileAsync(YTDLP, [
     '-f', ytFormat,

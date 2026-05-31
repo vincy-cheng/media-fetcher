@@ -4,7 +4,7 @@ use tokio::sync::watch;
 use crate::utils::{
     sidecar::{run_ytdlp, run_ffmpeg, cookie_args},
     types::{CancellationRegistry, CookieConfig, DownloadProgressEvent, DownloadCompleteEvent},
-    validation::is_valid_youtube_url,
+    validation::is_valid_url,
 };
 
 /// Absolute maximum video duration (3 hours). Enforced regardless of user settings.
@@ -78,8 +78,8 @@ pub async fn download_media(
     duration: Option<f64>,
     registry: State<'_, CancellationRegistry>,
 ) -> Result<String, String> {
-    if !is_valid_youtube_url(&url) {
-        return Err("Invalid YouTube URL".to_string());
+    if !is_valid_url(&url) {
+        return Err("Invalid URL".to_string());
     }
 
     // Duration safety check (backend hard ceiling)
@@ -123,9 +123,9 @@ pub async fn download_media(
 
     let yt_format = if is_video_format(&format) {
         let height = resolution_to_height(resolution.as_deref().unwrap_or("1080p"));
-        format!("bestvideo[height<={height}]+bestaudio/best[height<={height}]")
+        format!("bestvideo[height<={height}]+bestaudio/best[height<={height}]/best")
     } else {
-        "bestaudio".to_string()
+        "bestaudio/best".to_string()
     };
 
     let mut dl_args = vec![

@@ -2,7 +2,7 @@ use tauri::AppHandle;
 use crate::utils::{
     sidecar::{run_ytdlp, cookie_args},
     types::{VideoInfo, CookieConfig},
-    validation::is_valid_youtube_url,
+    validation::is_valid_url,
 };
 
 #[tauri::command]
@@ -11,8 +11,8 @@ pub async fn get_video_info(
     url: String,
     cookie_config: Option<CookieConfig>,
 ) -> Result<VideoInfo, String> {
-    if !is_valid_youtube_url(&url) {
-        return Err("Invalid YouTube URL".to_string());
+    if !is_valid_url(&url) {
+        return Err("Invalid URL".to_string());
     }
 
     let mut args = vec![

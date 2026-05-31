@@ -2,8 +2,8 @@
 import { useState } from "react";
 import { MAX_BATCH_URLS } from "@/hooks/useBatchDownload";
 
-function isYouTubeUrl(url: string): boolean {
-  return url.includes("youtube.com") || url.includes("youtu.be");
+function isValidUrl(url: string): boolean {
+  return url.startsWith("http://") || url.startsWith("https://");
 }
 
 interface BatchUrlInputProps {
@@ -15,7 +15,7 @@ export function BatchUrlInput({ count, onAdd }: BatchUrlInputProps) {
   const [value, setValue] = useState("");
 
   const trimmed = value.trim();
-  const isValid = trimmed.length > 0 && isYouTubeUrl(trimmed);
+  const isValid = isValidUrl(trimmed);
   const atLimit = count >= MAX_BATCH_URLS;
 
   const handleAdd = () => {
@@ -34,8 +34,8 @@ export function BatchUrlInput({ count, onAdd }: BatchUrlInputProps) {
         <input
           type="text"
           className="flex-1 rounded-md border border-primary-200 bg-primary-50 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
-          placeholder="Paste YouTube URL…"
-          aria-label="YouTube URL"
+          placeholder="Paste URL…"
+          aria-label="Media URL"
           value={value}
           onChange={(e) => setValue(e.target.value)}
           onKeyDown={handleKeyDown}
