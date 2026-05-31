@@ -2,6 +2,7 @@ import { JobQueue } from "@/components/JobQueue";
 import { UrlInput } from "@/components/UrlInput";
 import { VideoInfoCard } from "@/components/VideoInfoCard";
 import { PreviewSection } from "@/components/app/PreviewSection";
+import { TrimSection } from "@/components/TrimSection";
 import { DownloadSection } from "@/components/app/DownloadSection";
 import { useVideoFetch } from "@/components/app/VideoFetchContext";
 import { usePreviewContext } from "@/components/app/PreviewContext";
@@ -55,6 +56,7 @@ export function SingleDownloadSection() {
       )}
 
       <PreviewSection />
+      <TrimSection />
       <DownloadSection />
 
       <JobQueue
