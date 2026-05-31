@@ -1,5 +1,4 @@
 import { AudioPreview } from "@/components/AudioPreview";
-import { TrimControls } from "@/components/TrimControls";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useVideoFetch } from "@/components/app/VideoFetchContext";
 import { usePreviewContext } from "@/components/app/PreviewContext";
@@ -7,8 +6,9 @@ import { useDownloadOptions } from "@/providers/DownloadOptionsProvider";
 import { isVideoFormat } from "@/api/types";
 
 /**
- * Renders preview and trim controls for audio downloads when previewing is available.
+ * Renders the waveform audio preview for audio downloads when previewing is available.
  * Shows a skeleton placeholder while the preview is loading.
+ * Trim controls are rendered separately by TrimSection.
  */
 export function PreviewSection() {
   const { info } = useVideoFetch();
@@ -32,9 +32,9 @@ export function PreviewSection() {
   if (!info || !audioUrl) return null;
 
   return (
-    <div className="space-y-3 rounded-lg border border-primary-200 bg-primary-50 p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-      <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-        Preview & Trim
+    <div className="rounded-lg border border-primary-200 bg-primary-50 p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+      <h3 className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">
+        Preview
       </h3>
       <AudioPreview
         audioUrl={audioUrl}
@@ -42,12 +42,6 @@ export function PreviewSection() {
         start={trimStart}
         end={trimEnd}
         onTrimChange={setTrimRange}
-      />
-      <TrimControls
-        start={trimStart}
-        end={trimEnd}
-        duration={info.duration}
-        onChange={setTrimRange}
       />
     </div>
   );
