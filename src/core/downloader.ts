@@ -27,7 +27,7 @@ export const YTDLP = resolveBin('YTDLP_BIN', 'yt-dlp')
 export const FFMPEG = resolveBin('FFMPEG_BIN', 'ffmpeg')
 
 function sanitizeFilenameBaseName(name: string): string {
-  return name.replace(/[^\p{L}\p{N} \-_.]/gu, '_').trim()
+  return name.replace(/[^\p{L}\p{N} \-_.,&()!]/gu, '_').trim()
 }
 
 export async function getVideoInfo(url: string): Promise<VideoInfo> {
