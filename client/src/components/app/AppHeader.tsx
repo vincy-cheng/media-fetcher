@@ -1,4 +1,4 @@
-import { GearIcon, MoonIcon, SunIcon, ClockIcon } from "@radix-ui/react-icons";
+import { GearIcon, MoonIcon, SunIcon, ClockIcon, DownloadIcon } from "@radix-ui/react-icons";
 import { useDarkModeContext } from "@/providers/DarkModeProvider";
 import { useAppShell } from "@/providers/AppShellProvider";
 
@@ -7,7 +7,7 @@ import { useAppShell } from "@/providers/AppShellProvider";
  */
 export function AppHeader() {
   const { dark, toggleDark } = useDarkModeContext();
-  const { setShowSettings, setActiveTab, toolStatus } = useAppShell();
+  const { setShowSettings, setActiveTab, toolStatus, activeTab } = useAppShell();
 
   return (
     <header className="flex items-start justify-between">
@@ -20,14 +20,25 @@ export function AppHeader() {
         </p>
       </div>
       <div className="flex gap-3">
-        <button
-          type="button"
-          onClick={() => setActiveTab("history")}
-          className="cursor-pointer text-gray-700 hover:text-primary-700 dark:text-gray-300 dark:hover:text-white"
-          aria-label="View history"
-        >
-          <ClockIcon width={20} height={20} />
-        </button>
+        {activeTab === 'history' ? (
+          <button
+            type="button"
+            onClick={() => setActiveTab("single")}
+            className="cursor-pointer text-gray-700 hover:text-primary-700 dark:text-gray-300 dark:hover:text-white"
+            aria-label="Go to download"
+          >
+            <DownloadIcon width={20} height={20} />
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setActiveTab("history")}
+            className="cursor-pointer text-gray-700 hover:text-primary-700 dark:text-gray-300 dark:hover:text-white"
+            aria-label="View history"
+          >
+            <ClockIcon width={20} height={20} />
+          </button>
+        )}
         <button
           type="button"
           onClick={() => setShowSettings(true)}
