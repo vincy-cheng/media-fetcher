@@ -37,7 +37,11 @@ function saveRaw(records: HistoryRecord[]) {
 }
 
 export function getHistory(): HistoryRecord[] {
-  return loadRaw().sort((a, b) => b.timestamp - a.timestamp)
+  const raw = loadRaw()
+  // Deduplicate by id on read (cleans up any pre-fix duplicates in localStorage)
+  const seen = new Set<string>()
+  const deduped = raw.filter(r => seen.has(r.id) ? false : (seen.add(r.id), true))
+  return deduped.sort((a, b) => b.timestamp - a.timestamp)
 }
 
 export function addHistoryRecord(rec: HistoryRecord) {
