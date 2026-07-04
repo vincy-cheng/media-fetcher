@@ -1,41 +1,34 @@
 import { useEffect, useState } from 'react'
 import { getHistory, clearHistory } from '@/utils/history'
-import type { HistoryRecord, HistoryType } from '@/utils/history'
+import type { HistoryRecord } from '@/utils/history'
 import { useAppShell } from '@/providers/AppShellProvider'
 
-interface HistoryPageProps {
-  type?: HistoryType
-}
-
-export function HistoryPage({ type }: HistoryPageProps) {
+export function HistoryPage() {
   const [records, setRecords] = useState<HistoryRecord[]>([])
   const { activeTab } = useAppShell()
 
   useEffect(() => {
-    const all = getHistory()
-    const filtered = type ? all.filter(r => r.type === type) : all
-    setRecords(filtered)
-  }, [type])
+    setRecords(getHistory())
+  }, [])
 
   const handleClear = () => {
     clearHistory()
     setRecords([])
   }
 
-  const tabId = type ? `history-${type}` : 'history-all'
   const hidden = activeTab !== 'history'
 
   if (records.length === 0) return (
-    <div id={tabId} aria-labelledby="tab-history" hidden={hidden} className="mt-4">
-      <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">{type ? type.charAt(0).toUpperCase() + type.slice(1) : 'All'} History</h3>
+    <div id="tabpanel-history" aria-labelledby="tab-history" hidden={hidden} className="mt-4">
+      <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">History</h3>
       <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">No history yet.</p>
     </div>
   )
 
   return (
-    <div id={tabId} aria-labelledby="tab-history" hidden={hidden} className="mt-4">
+    <div id="tabpanel-history" aria-labelledby="tab-history" hidden={hidden} className="mt-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">{type ? type.charAt(0).toUpperCase() + type.slice(1) : 'All'} History</h3>
+        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">History</h3>
         <button onClick={handleClear} className="text-sm text-gray-500 underline hover:text-gray-700 dark:hover:text-gray-300">Clear</button>
       </div>
 
@@ -47,7 +40,7 @@ export function HistoryPage({ type }: HistoryPageProps) {
               <div className="text-xs text-gray-500 dark:text-gray-400">{new Date(r.timestamp).toLocaleString()}</div>
             </div>
             <div className="mt-1 flex items-center gap-2">
-              <div className="rounded-full bg-gray-200 px-2 py-0.5 text-xs dark:bg-gray-700">{r.type}</div>
+              <div className="rounded-full bg-gray-200 px-2 py-0.5 text-xs dark:bg-gray-700 font-medium">{r.type}</div>
               <div className="text-xs text-gray-500 dark:text-gray-400">{r.stage}</div>
               {r.outputPath && <div className="ml-auto text-xs font-medium text-emerald-600 dark:text-emerald-400">{r.outputPath}</div>}
             </div>

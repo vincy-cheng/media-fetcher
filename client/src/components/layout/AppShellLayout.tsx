@@ -7,13 +7,14 @@ import { SingleDownloadPage } from "@/components/pages/SingleDownloadPage";
 import { HistoryPage } from "@/components/pages/HistoryPage";
 import { useAppShell } from "@/providers/AppShellProvider";
 import { useSettingsContext } from "@/providers/SettingsProvider";
+import { DownloadIcon } from "@radix-ui/react-icons";
 
 /**
  * Pure UI shell — renders the header, tabs, pages, and settings modal.
  * All state comes from providers; no local state here.
  */
 export function AppShellLayout() {
-  const { showSettings, setShowSettings, toolStatus, activeTab } = useAppShell();
+  const { showSettings, setShowSettings, toolStatus, activeTab, setActiveTab } = useAppShell();
   const { settings, saveSettings } = useSettingsContext();
 
   return (
@@ -26,15 +27,21 @@ export function AppShellLayout() {
             onOpenSettings={() => setShowSettings(true)}
           />
         )}
-        <AppTabs />
+        {activeTab === 'history' ? (
+          <button
+            type="button"
+            onClick={() => setActiveTab('single')}
+            className="cursor-pointer text-gray-700 hover:text-primary-700 dark:text-gray-300 dark:hover:text-white"
+            aria-label="Go to download"
+          >
+            <DownloadIcon width={20} height={20} />
+          </button>
+        ) : (
+          <AppTabs />
+        )}
         <SingleDownloadPage />
         <BatchDownloadPage />
-        {activeTab === 'history' && (
-          <>
-            <HistoryPage type="single" />
-            <HistoryPage type="batch" />
-          </>
-        )}
+        <HistoryPage />
       </div>
       {showSettings && (
         <SettingsModal
