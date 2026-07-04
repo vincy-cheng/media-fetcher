@@ -4,6 +4,7 @@ import { AppHeader } from "@/components/app/AppHeader";
 import { AppTabs } from "@/components/app/AppTabs";
 import { BatchDownloadPage } from "@/components/pages/BatchDownloadPage";
 import { SingleDownloadPage } from "@/components/pages/SingleDownloadPage";
+import { HistoryPage } from "@/components/pages/HistoryPage";
 import { useAppShell } from "@/providers/AppShellProvider";
 import { useSettingsContext } from "@/providers/SettingsProvider";
 
@@ -28,6 +29,7 @@ export function AppShellLayout() {
         <AppTabs />
         <SingleDownloadPage />
         <BatchDownloadPage />
+        <HistoryPage />
       </div>
       {showSettings && (
         <SettingsModal

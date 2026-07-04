@@ -1,6 +1,6 @@
 import { useAppShell, type AppShellTab } from "@/providers/AppShellProvider";
 
-const APP_SHELL_TABS: AppShellTab[] = ["single", "batch"];
+const APP_SHELL_TABS: AppShellTab[] = ["single", "batch", "history"];
 
 /**
  * Renders the top-level shell tabs.
@@ -28,7 +28,7 @@ export function AppTabs() {
               : "text-gray-600 hover:bg-primary-100 dark:text-gray-300 dark:hover:bg-gray-700"
           }`}
         >
-          {tab === "single" ? "Single" : "Batch"}
+          {tab === "single" ? "Single" : tab === "batch" ? "Batch" : "History"}
         </button>
       ))}
     </div>

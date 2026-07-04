@@ -4,6 +4,7 @@ import { getVideoInfo, downloadMedia, cancelDownload, onDownloadProgress, onDown
 import type { VideoInfo, Format, VideoResolution, Bitrate, JobProgress } from '@/api/types'
 import { ABSOLUTE_MAX_DURATION_SECONDS } from '@/api/types'
 import type { UnlistenFn } from '@/api/client'
+import { addHistoryRecord } from '@/utils/history'
 
 export const MAX_BATCH_URLS = 20
 export const MAX_CONCURRENT_DOWNLOADS = 3
@@ -47,8 +48,9 @@ export function useBatchDownload() {
         return fn
       }),
       onDownloadComplete((payload) => {
-        setItems((prev) =>
-          prev.map((item) =>
+        setItems((prev) => {
+          const item = prev.find((i) => i.id === payload.jobId)
+          const mapped = prev.map((item) =>
             item.id === payload.jobId
               ? {
                   ...item,
@@ -62,7 +64,22 @@ export function useBatchDownload() {
                 }
               : item
           )
-        )
+          if (item) {
+            try {
+              addHistoryRecord({
+                id: item.id,
+                url: item.url,
+                type: 'batch',
+                stage: 'complete',
+                message: `Saved: ${payload.outputPath}`,
+                percent: 100,
+                outputPath: payload.outputPath,
+                timestamp: Date.now(),
+              })
+            } catch {}
+          }
+          return mapped
+        })
       }).then((fn) => {
         partialFns.push(fn)
         return fn

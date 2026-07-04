@@ -4,7 +4,7 @@ import type { Dispatch, PropsWithChildren, SetStateAction } from "react";
 import { useToolStatus } from "@/hooks/useToolStatus";
 import type { ToolStatusState } from "@/hooks/useToolStatus";
 
-export type AppShellTab = "single" | "batch";
+export type AppShellTab = "single" | "batch" | "history";
 
 interface AppShellContextValue {
   activeTab: AppShellTab;
