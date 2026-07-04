@@ -7,23 +7,42 @@ interface RecentHistoryProps {
   limit?: number
 }
 
+const STAGE_COLORS: Record<string, string> = {
+  complete: 'bg-emerald-500',
+  error: 'bg-red-500',
+  cancelled: 'bg-gray-400',
+}
+
 export function RecentHistory({ type, limit = 5 }: RecentHistoryProps) {
   const [records, setRecords] = useState<HistoryRecord[]>([])
 
+  // Refresh on mount and whenever the document becomes visible (tab re-focus)
   useEffect(() => {
-    setRecords(getHistoryByType(type).slice(0, limit))
+    const refresh = () => setRecords(getHistoryByType(type).slice(0, limit))
+    refresh()
+    document.addEventListener('visibilitychange', refresh)
+    return () => document.removeEventListener('visibilitychange', refresh)
   }, [type, limit])
 
   if (records.length === 0) return null
 
   return (
-    <div className="mt-4 rounded-lg bg-white p-3 dark:bg-gray-800">
-      <h3 className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Recent History</h3>
-      <div className="mt-2 flex flex-col gap-1">
+    <div className="mt-4">
+      <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Recent History</h3>
+      <div className="mt-2 flex flex-col gap-2">
         {records.map((r) => (
-          <div key={`${r.id}-${r.timestamp}`} className="text-xs text-gray-600 dark:text-gray-400">
-            <div className="truncate text-gray-700 dark:text-gray-300">{r.url.replace(/https?:\/\/(www\.)?/, '').split('/')[0]}</div>
-            <div className="text-gray-500 dark:text-gray-500">{new Date(r.timestamp).toLocaleTimeString()}</div>
+          <div key={`${r.id}-${r.timestamp}`} className="rounded-lg border border-primary-200 bg-primary-50 p-3 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+            <div className="flex items-center justify-between">
+              <div className="truncate text-xs text-gray-600 dark:text-gray-400">{r.url}</div>
+              <div className="shrink-0 text-xs text-gray-500 dark:text-gray-400">{new Date(r.timestamp).toLocaleString()}</div>
+            </div>
+            <div className="mt-1 flex items-center gap-2">
+              <span className={`rounded-full px-2 py-0.5 text-xs font-medium text-white ${STAGE_COLORS[r.stage] ?? 'bg-gray-400'}`}>
+                {r.stage}
+              </span>
+              {r.outputPath && <div className="ml-auto truncate text-xs font-medium text-emerald-600 dark:text-emerald-400">{r.outputPath}</div>}
+            </div>
+            {r.message && <p className="mt-1 truncate text-xs text-gray-500 dark:text-gray-400">{r.message}</p>}
           </div>
         ))}
       </div>
