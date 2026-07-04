@@ -53,7 +53,10 @@ export function useDownloadJob() {
               outputPath: payload.outputPath,
               timestamp: Date.now(),
             }
-            try { addHistoryRecord(rec) } catch {} // best-effort
+            try {
+              addHistoryRecord(rec)
+              document.dispatchEvent(new Event('history-updated'))
+            } catch {} // best-effort
           }
           return mapped
         })
@@ -100,6 +103,7 @@ export function useDownloadJob() {
               percent: 0,
               timestamp: Date.now(),
             })
+            document.dispatchEvent(new Event('history-updated'))
           } catch {}
         }
         return mapped

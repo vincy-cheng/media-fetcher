@@ -22,7 +22,11 @@ export function RecentHistory({ type, limit = 5 }: RecentHistoryProps) {
     const refresh = () => setRecords(getHistoryByType(type).slice(0, limit))
     refresh()
     document.addEventListener('visibilitychange', refresh)
-    return () => document.removeEventListener('visibilitychange', refresh)
+    document.addEventListener('history-updated', refresh)
+    return () => {
+      document.removeEventListener('visibilitychange', refresh)
+      document.removeEventListener('history-updated', refresh)
+    }
   }, [type, limit])
 
   if (records.length === 0) return null
