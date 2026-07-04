@@ -1,24 +1,34 @@
 import { useEffect, useState } from 'react'
+import { ChevronLeftIcon, ChevronRightIcon } from '@radix-ui/react-icons'
 import { getHistory, clearHistory } from '@/utils/history'
 import type { HistoryRecord } from '@/utils/history'
 import { useAppShell } from '@/providers/AppShellProvider'
 
+const PAGE_SIZE = 10
+
 export function HistoryPage() {
   const [records, setRecords] = useState<HistoryRecord[]>([])
+  const [page, setPage] = useState(1)
   const { activeTab } = useAppShell()
 
   useEffect(() => {
     if (activeTab === 'history') {
       setRecords(getHistory())
+      setPage(1)
     }
   }, [activeTab])
 
   const handleClear = () => {
     clearHistory()
     setRecords([])
+    setPage(1)
   }
 
   const hidden = activeTab !== 'history'
+  const totalPages = Math.ceil(records.length / PAGE_SIZE)
+  const start = (page - 1) * PAGE_SIZE
+  const end = start + PAGE_SIZE
+  const pageRecords = records.slice(start, end)
 
   if (records.length === 0) return (
     <div id="tabpanel-history" aria-labelledby="tab-history" hidden={hidden} className="mt-4">
@@ -35,7 +45,7 @@ export function HistoryPage() {
       </div>
 
       <div className="mt-3 flex flex-col gap-2">
-        {records.map((r) => (
+        {pageRecords.map((r) => (
           <div key={`${r.type}-${r.id}-${r.timestamp}`} className="rounded-lg border border-primary-200 bg-primary-50 p-3 shadow-sm dark:border-gray-700 dark:bg-gray-800">
             <div className="flex items-center justify-between">
               <div className="text-xs text-gray-600 dark:text-gray-400 truncate">{r.url}</div>
@@ -50,6 +60,30 @@ export function HistoryPage() {
           </div>
         ))}
       </div>
+
+      {totalPages > 1 && (
+        <div className="mt-4 flex items-center justify-between">
+          <button
+            onClick={() => setPage(p => Math.max(1, p - 1))}
+            disabled={page === 1}
+            className="flex items-center gap-1 text-sm text-gray-600 disabled:text-gray-300 hover:text-gray-800 disabled:hover:text-gray-300 dark:text-gray-400 dark:disabled:text-gray-600 dark:hover:text-gray-200"
+            aria-label="Previous page"
+          >
+            <ChevronLeftIcon /> Prev
+          </button>
+          <span className="text-xs text-gray-600 dark:text-gray-400">
+            Page {page} of {totalPages}
+          </span>
+          <button
+            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+            disabled={page === totalPages}
+            className="flex items-center gap-1 text-sm text-gray-600 disabled:text-gray-300 hover:text-gray-800 disabled:hover:text-gray-300 dark:text-gray-400 dark:disabled:text-gray-600 dark:hover:text-gray-200"
+            aria-label="Next page"
+          >
+            Next <ChevronRightIcon />
+          </button>
+        </div>
+      )}
     </div>
   )
 }
