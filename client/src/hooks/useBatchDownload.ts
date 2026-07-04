@@ -221,7 +221,11 @@ export function useBatchDownload() {
     setItems([])
   }, [])
 
-  return { items, downloading, addUrl, retryInfo, removeItem, cancelItem, downloadAll, clearAll }
+  const clearCompleted = useCallback(() => {
+    setItems((prev) => prev.filter((i) => i.progress?.stage !== 'complete'))
+  }, [])
+
+  return { items, downloading, addUrl, retryInfo, removeItem, cancelItem, downloadAll, clearAll, clearCompleted }
 }
 
 function formatDuration(seconds: number): string {
