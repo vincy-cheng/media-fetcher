@@ -8,8 +8,10 @@ export function HistoryPage() {
   const { activeTab } = useAppShell()
 
   useEffect(() => {
-    setRecords(getHistory())
-  }, [])
+    if (activeTab === 'history') {
+      setRecords(getHistory())
+    }
+  }, [activeTab])
 
   const handleClear = () => {
     clearHistory()

@@ -42,8 +42,15 @@ export function getHistory(): HistoryRecord[] {
 
 export function addHistoryRecord(rec: HistoryRecord) {
   const prev = loadRaw()
+  // Deduplicate: skip if same id, type, and stage already exist in last 10 records
+  const isDupe = prev.slice(0, 10).some(r => r.id === rec.id && r.type === rec.type && r.stage === rec.stage)
+  if (isDupe) return
   prev.unshift(rec)
   saveRaw(prev)
+}
+
+export function getHistoryByType(type: HistoryType): HistoryRecord[] {
+  return loadRaw().filter(r => r.type === type)
 }
 
 export function clearHistory() {

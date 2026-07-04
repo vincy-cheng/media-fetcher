@@ -1,5 +1,6 @@
 import { SingleDownloadSection } from "@/components/app/SingleDownloadSection";
 import { SingleDownloadProvider } from "@/components/app/SingleDownloadProvider";
+import { RecentHistory } from "@/components/RecentHistory";
 import { useAppShell } from "@/providers/AppShellProvider";
 
 /**
@@ -18,6 +19,7 @@ export function SingleDownloadPage() {
     >
       <SingleDownloadProvider>
         <SingleDownloadSection />
+        <RecentHistory type="single" />
       </SingleDownloadProvider>
     </div>
   );
