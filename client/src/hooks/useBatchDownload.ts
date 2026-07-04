@@ -55,12 +55,12 @@ export function useBatchDownload() {
               ? {
                   ...item,
                   outputPath: payload.outputPath,
-                  progress: {
+                  progress: ({
                     jobId: payload.jobId,
                     percent: 100,
                     stage: 'complete',
                     message: `Saved: ${payload.outputPath}`,
-                  },
+                  } as JobProgress),
                 }
               : item
           )
@@ -186,7 +186,7 @@ export function useBatchDownload() {
                       percent: 0,
                       stage: 'error',
                       message: `Video duration exceeds the ${formatDuration(effectiveMax)} limit`,
-                    },
+                    } as JobProgress,
                   }
                 : item
             )

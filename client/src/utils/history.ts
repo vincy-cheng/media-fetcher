@@ -1,11 +1,13 @@
 // client/src/utils/history.ts
+import type { JobProgress } from '@/api/types'
+
 export type HistoryType = 'single' | 'batch'
 
-export interface HistoryRecord {
+export type HistoryRecord = {
   id: string
   url: string
   type: HistoryType
-  stage: string
+  stage: JobProgress['stage']
   message?: string
   percent?: number
   outputPath?: string

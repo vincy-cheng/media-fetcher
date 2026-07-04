@@ -13,7 +13,7 @@ import { useSettingsContext } from "@/providers/SettingsProvider";
  * All state comes from providers; no local state here.
  */
 export function AppShellLayout() {
-  const { showSettings, setShowSettings, toolStatus } = useAppShell();
+  const { showSettings, setShowSettings, toolStatus, activeTab } = useAppShell();
   const { settings, saveSettings } = useSettingsContext();
 
   return (
@@ -29,7 +29,12 @@ export function AppShellLayout() {
         <AppTabs />
         <SingleDownloadPage />
         <BatchDownloadPage />
-        <HistoryPage />
+        {activeTab === 'history' && (
+          <>
+            <HistoryPage type="single" />
+            <HistoryPage type="batch" />
+          </>
+        )}
       </div>
       {showSettings && (
         <SettingsModal

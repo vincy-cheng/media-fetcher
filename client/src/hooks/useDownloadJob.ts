@@ -2,7 +2,8 @@
 import { useState, useCallback, useEffect } from 'react'
 import { downloadMedia, cancelDownload, onDownloadProgress, onDownloadComplete } from '@/api/client'
 import type { DownloadOptions, JobProgress } from '@/api/types'
-import { addHistoryRecord, HistoryRecord, clearHistory as clearHistoryStorage } from '@/utils/history'
+import { addHistoryRecord, clearHistory as clearHistoryStorage } from '@/utils/history'
+import type { HistoryRecord } from '@/utils/history'
 
 export interface Job {
   id: string
@@ -32,12 +33,12 @@ export function useDownloadJob() {
               ? {
                   ...j,
                   outputPath: payload.outputPath,
-                  progress: {
+                  progress: ({
                     jobId: payload.jobId,
                     percent: 100,
                     stage: 'complete',
                     message: `Saved: ${payload.outputPath}`,
-                  },
+                  } as JobProgress),
                 }
               : j
           )
@@ -85,7 +86,7 @@ export function useDownloadJob() {
           if (j.progress.stage === 'cancelled') return j
           return {
             ...j,
-            progress: { jobId: id, percent: 0, stage: 'error', message: msg },
+            progress: ({ jobId: id, percent: 0, stage: 'error', message: msg } as JobProgress),
           }
         })
         if (found) {

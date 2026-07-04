@@ -1,6 +1,6 @@
 import { useAppShell, type AppShellTab } from "@/providers/AppShellProvider";
 
-const APP_SHELL_TABS: AppShellTab[] = ["single", "batch", "history"];
+const APP_SHELL_TABS: AppShellTab[] = ["single", "batch"];
 
 /**
  * Renders the top-level shell tabs.
@@ -10,7 +10,7 @@ export function AppTabs() {
 
   return (
     <div
-      className="flex gap-1 rounded-lg border border-primary-200 bg-primary-50 p-1 dark:border-gray-700 dark:bg-gray-800"
+      className="flex gap-1 rounded-lg bg-primary-50 p-1 dark:bg-gray-800"
       role="tablist"
     >
       {APP_SHELL_TABS.map((tab) => (
@@ -28,7 +28,7 @@ export function AppTabs() {
               : "text-gray-600 hover:bg-primary-100 dark:text-gray-300 dark:hover:bg-gray-700"
           }`}
         >
-          {tab === "single" ? "Single" : tab === "batch" ? "Batch" : "History"}
+          {tab === "single" ? "Single" : "Batch"}
         </button>
       ))}
     </div>
