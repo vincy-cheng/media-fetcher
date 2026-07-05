@@ -77,7 +77,9 @@ export function useBatchDownload() {
                 timestamp: Date.now(),
               })
               document.dispatchEvent(new Event('history-updated'))
-            } catch {}
+            } catch {
+              // ignore history record failures
+            }
           }
           return mapped
         })

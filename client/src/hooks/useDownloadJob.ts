@@ -56,7 +56,9 @@ export function useDownloadJob() {
             try {
               addHistoryRecord(rec)
               document.dispatchEvent(new Event('history-updated'))
-            } catch {} // best-effort
+            } catch {
+              // ignore history record failures
+            }
           }
           return mapped
         })
@@ -104,7 +106,9 @@ export function useDownloadJob() {
               timestamp: Date.now(),
             })
             document.dispatchEvent(new Event('history-updated'))
-          } catch {}
+          } catch {
+            // ignore history record failures
+          }
         }
         return mapped
       })
@@ -125,7 +129,11 @@ export function useDownloadJob() {
   // Only clear terminal (completed/error/cancelled) jobs — keep active ones
   const clearHistory = useCallback(() => {
     setJobs((prev) => prev.filter((j) => !TERMINAL_STAGES.has(j.progress.stage)))
-    try { clearHistoryStorage() } catch {}
+    try {
+      clearHistoryStorage()
+    } catch {
+      // ignore storage clear failures
+    }
   }, [])
 
   const activeJobs = jobs.filter((j) => !TERMINAL_STAGES.has(j.progress.stage)).reverse()
