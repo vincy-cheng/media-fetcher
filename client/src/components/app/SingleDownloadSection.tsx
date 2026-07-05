@@ -17,7 +17,7 @@ import { isVideoFormat } from "@/api/types";
 export function SingleDownloadSection() {
   const { handleFetchInfo, infoLoading, infoError, info } = useVideoFetch();
   const { handlePreview, cancelPreview, previewLoading, previewError } = usePreviewContext();
-  const { jobs, history, clearHistory, cancelDownload } = useJobQueue();
+  const { jobs, cancelDownload } = useJobQueue();
   const { format, canPreview } = useDownloadOptions();
 
   return (
@@ -61,8 +61,6 @@ export function SingleDownloadSection() {
 
       <JobQueue
         jobs={jobs}
-        history={history}
-        onClear={clearHistory}
         onCancel={cancelDownload}
       />
     </div>

@@ -4,6 +4,7 @@ import { AppHeader } from "@/components/app/AppHeader";
 import { AppTabs } from "@/components/app/AppTabs";
 import { BatchDownloadPage } from "@/components/pages/BatchDownloadPage";
 import { SingleDownloadPage } from "@/components/pages/SingleDownloadPage";
+import { HistoryPage } from "@/components/pages/HistoryPage";
 import { useAppShell } from "@/providers/AppShellProvider";
 import { useSettingsContext } from "@/providers/SettingsProvider";
 
@@ -12,7 +13,7 @@ import { useSettingsContext } from "@/providers/SettingsProvider";
  * All state comes from providers; no local state here.
  */
 export function AppShellLayout() {
-  const { showSettings, setShowSettings, toolStatus } = useAppShell();
+  const { showSettings, setShowSettings, toolStatus, activeTab } = useAppShell();
   const { settings, saveSettings } = useSettingsContext();
 
   return (
@@ -25,9 +26,10 @@ export function AppShellLayout() {
             onOpenSettings={() => setShowSettings(true)}
           />
         )}
-        <AppTabs />
+        {activeTab !== 'history' && <AppTabs />}
         <SingleDownloadPage />
         <BatchDownloadPage />
+        <HistoryPage />
       </div>
       {showSettings && (
         <SettingsModal

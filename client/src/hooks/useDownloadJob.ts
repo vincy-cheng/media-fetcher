@@ -2,6 +2,8 @@
 import { useState, useCallback, useEffect } from 'react'
 import { downloadMedia, cancelDownload, onDownloadProgress, onDownloadComplete } from '@/api/client'
 import type { DownloadOptions, JobProgress } from '@/api/types'
+import { addHistoryRecord, clearHistory as clearHistoryStorage } from '@/utils/history'
+import type { HistoryRecord } from '@/utils/history'
 
 export interface Job {
   id: string
@@ -24,22 +26,42 @@ export function useDownloadJob() {
         )
       }),
       onDownloadComplete((payload) => {
-        setJobs((prev) =>
-          prev.map((j) =>
+        setJobs((prev) => {
+          const job = prev.find((j) => j.id === payload.jobId)
+          const mapped = prev.map((j) =>
             j.id === payload.jobId
               ? {
                   ...j,
                   outputPath: payload.outputPath,
-                  progress: {
+                  progress: ({
                     jobId: payload.jobId,
                     percent: 100,
                     stage: 'complete',
                     message: `Saved: ${payload.outputPath}`,
-                  },
+                  } as JobProgress),
                 }
               : j
           )
-        )
+          if (job) {
+            const rec: HistoryRecord = {
+              id: job.id,
+              url: job.url,
+              type: 'single',
+              stage: 'complete',
+              message: `Saved: ${payload.outputPath}`,
+              percent: 100,
+              outputPath: payload.outputPath,
+              timestamp: Date.now(),
+            }
+            try {
+              addHistoryRecord(rec)
+              document.dispatchEvent(new Event('history-updated'))
+            } catch {
+              // ignore history record failures
+            }
+          }
+          return mapped
+        })
       }),
     ]
 
@@ -63,14 +85,32 @@ export function useDownloadJob() {
       const msg = String(e)
       setJobs((prev) => {
         if (!prev.some((j) => j.id === id)) return prev
-        return prev.map((j) => {
+        const found = prev.find((j) => j.id === id)
+        const mapped = prev.map((j) => {
           if (j.id !== id) return j
           if (j.progress.stage === 'cancelled') return j
           return {
             ...j,
-            progress: { jobId: id, percent: 0, stage: 'error', message: msg },
+            progress: ({ jobId: id, percent: 0, stage: 'error', message: msg } as JobProgress),
           }
         })
+        if (found) {
+          try {
+            addHistoryRecord({
+              id: found.id,
+              url: found.url,
+              type: 'single',
+              stage: 'error',
+              message: msg,
+              percent: 0,
+              timestamp: Date.now(),
+            })
+            document.dispatchEvent(new Event('history-updated'))
+          } catch {
+            // ignore history record failures
+          }
+        }
+        return mapped
       })
     }
   }, [])
@@ -89,6 +129,11 @@ export function useDownloadJob() {
   // Only clear terminal (completed/error/cancelled) jobs — keep active ones
   const clearHistory = useCallback(() => {
     setJobs((prev) => prev.filter((j) => !TERMINAL_STAGES.has(j.progress.stage)))
+    try {
+      clearHistoryStorage()
+    } catch {
+      // ignore storage clear failures
+    }
   }, [])
 
   const activeJobs = jobs.filter((j) => !TERMINAL_STAGES.has(j.progress.stage)).reverse()
