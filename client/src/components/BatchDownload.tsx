@@ -42,6 +42,7 @@ export function BatchDownload({
     cancelItem,
     downloadAll,
     clearAll,
+    clearCompleted,
   } = useBatchDownload();
   const [format, setFormat] = useState<Format>(defaultFormat);
   const [resolution, setResolution] =
@@ -88,6 +89,7 @@ export function BatchDownload({
 
   const handleDownloadAll = () => {
     if (!canDownload) return;
+    clearCompleted();
     downloadAll(
       format,
       isVideoFormat(format) ? resolution : undefined,

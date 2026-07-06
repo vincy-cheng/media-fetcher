@@ -1,4 +1,4 @@
-import { GearIcon, MoonIcon, SunIcon } from "@radix-ui/react-icons";
+import { GearIcon, MoonIcon, SunIcon, ClockIcon, DownloadIcon } from "@radix-ui/react-icons";
 import { useDarkModeContext } from "@/providers/DarkModeProvider";
 import { useAppShell } from "@/providers/AppShellProvider";
 
@@ -7,7 +7,7 @@ import { useAppShell } from "@/providers/AppShellProvider";
  */
 export function AppHeader() {
   const { dark, toggleDark } = useDarkModeContext();
-  const { setShowSettings, toolStatus } = useAppShell();
+  const { setShowSettings, setActiveTab, toolStatus, activeTab } = useAppShell();
 
   return (
     <header className="flex items-start justify-between">
@@ -19,15 +19,33 @@ export function AppHeader() {
           Download audio or video in multiple formats
         </p>
       </div>
-      <div className="flex gap-2">
+      <div className="flex gap-3">
+        {activeTab === 'history' ? (
+          <button
+            type="button"
+            onClick={() => setActiveTab("single")}
+            className="cursor-pointer text-gray-700 hover:text-primary-700 dark:text-gray-300 dark:hover:text-white"
+            aria-label="Go to download"
+          >
+            <DownloadIcon width={20} height={20} />
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setActiveTab("history")}
+            className="cursor-pointer text-gray-700 hover:text-primary-700 dark:text-gray-300 dark:hover:text-white"
+            aria-label="View history"
+          >
+            <ClockIcon width={20} height={20} />
+          </button>
+        )}
         <button
           type="button"
           onClick={() => setShowSettings(true)}
-          className="relative inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-primary-700 bg-primary-600 px-3 py-1.5 text-sm text-primary-50 hover:bg-primary-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+          className="relative cursor-pointer text-gray-700 hover:text-primary-700 dark:text-gray-300 dark:hover:text-white"
           aria-label="Open settings"
         >
-          <GearIcon />
-          Settings
+          <GearIcon width={20} height={20} />
           {toolStatus.hasError && (
             <span
               className="absolute -right-1 -top-1 flex h-2.5 w-2.5 items-center justify-center rounded-full bg-red-500"
@@ -38,18 +56,10 @@ export function AppHeader() {
         <button
           type="button"
           onClick={toggleDark}
-          className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-primary-700 bg-primary-600 px-3 py-1.5 text-sm text-primary-50 hover:bg-primary-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+          className="cursor-pointer text-gray-700 hover:text-primary-700 dark:text-gray-300 dark:hover:text-white"
           aria-label="Toggle dark mode"
         >
-          {dark ? (
-            <>
-              <SunIcon /> Light
-            </>
-          ) : (
-            <>
-              <MoonIcon /> Dark
-            </>
-          )}
+          {dark ? <SunIcon width={20} height={20} /> : <MoonIcon width={20} height={20} />}
         </button>
       </div>
     </header>

@@ -10,7 +10,7 @@ export function AppTabs() {
 
   return (
     <div
-      className="flex gap-1 rounded-lg border border-primary-200 bg-primary-50 p-1 dark:border-gray-700 dark:bg-gray-800"
+      className="flex gap-1 rounded-lg bg-primary-50 p-1 dark:bg-gray-800"
       role="tablist"
     >
       {APP_SHELL_TABS.map((tab) => (

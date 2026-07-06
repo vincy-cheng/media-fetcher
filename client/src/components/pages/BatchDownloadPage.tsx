@@ -1,4 +1,5 @@
 import { BatchDownload } from "@/components/BatchDownload";
+import { RecentHistory } from "@/components/RecentHistory";
 import { useAppShell } from "@/providers/AppShellProvider";
 import { useDownloadOptions } from "@/providers/DownloadOptionsProvider";
 
@@ -29,6 +30,7 @@ export function BatchDownloadPage() {
         defaultOutputDir={outputDir}
         maxDurationSeconds={maxDurationSeconds}
       />
+      <RecentHistory type="batch" />
     </div>
   );
 }

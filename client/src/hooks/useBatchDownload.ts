@@ -4,6 +4,7 @@ import { getVideoInfo, downloadMedia, cancelDownload, onDownloadProgress, onDown
 import type { VideoInfo, Format, VideoResolution, Bitrate, JobProgress } from '@/api/types'
 import { ABSOLUTE_MAX_DURATION_SECONDS } from '@/api/types'
 import type { UnlistenFn } from '@/api/client'
+import { addHistoryRecord } from '@/utils/history'
 
 export const MAX_BATCH_URLS = 20
 export const MAX_CONCURRENT_DOWNLOADS = 3
@@ -47,22 +48,41 @@ export function useBatchDownload() {
         return fn
       }),
       onDownloadComplete((payload) => {
-        setItems((prev) =>
-          prev.map((item) =>
+        setItems((prev) => {
+          const item = prev.find((i) => i.id === payload.jobId)
+          const mapped = prev.map((item) =>
             item.id === payload.jobId
               ? {
                   ...item,
                   outputPath: payload.outputPath,
-                  progress: {
+                  progress: ({
                     jobId: payload.jobId,
                     percent: 100,
                     stage: 'complete',
                     message: `Saved: ${payload.outputPath}`,
-                  },
+                  } as JobProgress),
                 }
               : item
           )
-        )
+          if (item) {
+            try {
+              addHistoryRecord({
+                id: item.id,
+                url: item.url,
+                type: 'batch',
+                stage: 'complete',
+                message: `Saved: ${payload.outputPath}`,
+                percent: 100,
+                outputPath: payload.outputPath,
+                timestamp: Date.now(),
+              })
+              document.dispatchEvent(new Event('history-updated'))
+            } catch {
+              // ignore history record failures
+            }
+          }
+          return mapped
+        })
       }).then((fn) => {
         partialFns.push(fn)
         return fn
@@ -169,7 +189,7 @@ export function useBatchDownload() {
                       percent: 0,
                       stage: 'error',
                       message: `Video duration exceeds the ${formatDuration(effectiveMax)} limit`,
-                    },
+                    } as JobProgress,
                   }
                 : item
             )
@@ -203,7 +223,11 @@ export function useBatchDownload() {
     setItems([])
   }, [])
 
-  return { items, downloading, addUrl, retryInfo, removeItem, cancelItem, downloadAll, clearAll }
+  const clearCompleted = useCallback(() => {
+    setItems((prev) => prev.filter((i) => i.progress?.stage !== 'complete'))
+  }, [])
+
+  return { items, downloading, addUrl, retryInfo, removeItem, cancelItem, downloadAll, clearAll, clearCompleted }
 }
 
 function formatDuration(seconds: number): string {
